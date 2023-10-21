@@ -44,6 +44,7 @@ INSTALLED_APPS = [
 
     'api',
     'recipes',
+    'users',
 ]
 
 REST_FRAMEWORK = {
@@ -60,6 +61,10 @@ REST_FRAMEWORK = {
 
 DJOSER = {
     'LOGIN_FIELD': 'email',
+    'SERIALIZERS': {
+        'user': 'api.serializers.FoodUserSerializer',
+        'current_user': 'api.serializers.FoodUserSerializer',
+    },
 }
 
 MIDDLEWARE = [
