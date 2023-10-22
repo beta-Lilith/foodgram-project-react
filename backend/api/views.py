@@ -33,15 +33,19 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
 
+pdfmetrics.registerFont(TTFont('Montserrat-Bold', 'Montserrat-Bold.ttf'))
+pdfmetrics.registerFont(TTFont('Montserrat-Medium', 'Montserrat-Medium.ttf'))
+
+
 # PDF write settings
 START = 0
 BIG_FONT = 20
 SMALL_FONT = 13
 COLUMN_0 = 70
 COLUMN_1 = 220
-COLUMN_2 = 270
 LINE_0 = 750
 LINE_1 = 700
+TEXT_0 = 'Список ингредиентов:'
 NEXT_LINE = 20
 
 
@@ -151,16 +155,14 @@ class RecipeViewSet(ModelViewSet):
         user = request.user
         if not user.shoppingcart.exists():
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        buffer = io.BytesIO()
-        doc = canvas.Canvas(buffer)
-        pdfmetrics.registerFont(TTFont('Calibri', 'Calibri.ttf'))
-        doc.setFont('Calibri', BIG_FONT)
-        doc.drawString(
-            COLUMN_0, LINE_0, 'Список ингредиентов:')
         ingredients = RecipeIngredient.objects.filter(
             recipe__shoppingcart__user=user
         ).values(INGREDIENT, UNIT,).annotate(amount=Sum(AMOUNT))
-        doc.setFont('Calibri', SMALL_FONT)
+        buffer = io.BytesIO()
+        doc = canvas.Canvas(buffer)
+        doc.setFont('Montserrat-Bold', BIG_FONT)
+        doc.drawString(COLUMN_0, LINE_0, TEXT_0)
+        doc.setFont('Montserrat-Medium', SMALL_FONT)
         y = LINE_1
         for item in ingredients:
             doc.drawString(COLUMN_0, y, f'- {item[INGREDIENT]}',)
