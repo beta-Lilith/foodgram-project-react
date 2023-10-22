@@ -28,7 +28,7 @@ class Tag(models.Model):
     )
 
     def __str__(self):
-        return self.slug
+        return self.name
 
 
 class Recipe(models.Model):

@@ -4,7 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from djoser.views import UserViewSet
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
-from rest_framework import permissions, response, status
+from rest_framework import permissions, status
 from rest_framework.response import Response
 from recipes.models import Ingredient, Favorite, ShoppingCart, Recipe, Tag
 from users.models import Subscription, User
@@ -135,3 +135,4 @@ class IngredientViewSet(ModelViewSet):
 class TagViewSet(ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+    pagination_class = None
