@@ -4,10 +4,12 @@ from djoser.views import UserViewSet
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import permissions, response, status
-from recipes.models import Recipe, Tag
-from users.models import User, Subscription
+from recipes.models import Ingredient, Favorite, Recipe, Tag
+from users.models import Subscription, User
+from .filters import IngredientFilter
 from .serializers import (
     FoodUserSerializer,
+    IngredientSerializer,
     SubscriptionSerializer,
     TagSerializer,
     RecipeCreateSerializer,
@@ -79,3 +81,29 @@ class RecipeViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+    def add_favorite(self, request, model, id):
+        user = request.user
+        recipe = get_object_or_404(Recipe, id=id)
+        if request.method == 'POST':
+            model.objects.create(user=user, recipe=recipe)
+            return response.Response(
+                self.get_serializer(recipe).data,
+                status=status.HTTP_201_CREATED)
+
+    @action(
+        detail=True,
+        methods=('post', 'delete'),
+    )
+    def favorite(self, request, id=None):
+        return self.add_favorite(
+            request, Favorite, id,
+        )
+
+
+class IngredientViewSet(ModelViewSet):
+    queryset = Ingredient.objects.all()
+    serializer_class = IngredientSerializer
+    filter_backends = (IngredientFilter,)
+    search_fields = ('name',)
+    pagination_class = None

@@ -48,10 +48,11 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
 class RecipeSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
+    author = FoodUserSerializer(read_only=True)
     ingredients = RecipeIngredientSerializer(
         many=True, source='recipe_ingredient',
     )
-    author = FoodUserSerializer(read_only=True)
+    is_favorited = serializers.BooleanField()
 
     class Meta:
         model = Recipe
@@ -60,10 +61,12 @@ class RecipeSerializer(serializers.ModelSerializer):
             'tags',
             'author',
             'ingredients',
+            'is_favorited',
             'name',
             'text',
             'cooking_time',
         )
+        read_only_fields = ('is_favorite',)
 
 
 class AddIngredientSerializer(serializers.ModelSerializer):
@@ -149,3 +152,10 @@ class SubscriptionSerializer(FoodUserSerializer):
 
     def get_recipes_count(self, author):
         return author.recipe.count()
+
+
+class IngredientSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Ingredient
+        fields = ('id', 'name', 'measurement_unit',)

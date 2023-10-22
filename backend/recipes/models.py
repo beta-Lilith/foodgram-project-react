@@ -48,7 +48,6 @@ class Recipe(models.Model):
         through='RecipeIngredient',
         through_fields=('recipe', 'ingredient'),
     )
-    # is_favorite
     # is_in_shoping_card
     name = models.CharField(
         'название',
@@ -96,3 +95,27 @@ class RecipeIngredient(models.Model):
         on_delete=models.CASCADE,
     )
     amount = models.PositiveIntegerField()
+
+
+class Favorite(models.Model):
+    user = models.ForeignKey(
+        User,
+        verbose_name='пользователь',
+        related_name='favorite',
+        on_delete=models.CASCADE,
+    )
+    recipe = models.ForeignKey(
+        Recipe,
+        verbose_name='рецепт',
+        related_name='favorite',
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
+        verbose_name = 'избранное'
+        verbose_name_plural = 'избранное'
+        constraints = [
+            models.UniqueConstraint(
+                fields=('user', 'recipe',),
+                name='unique_favorite_recipe',
+            ),]
