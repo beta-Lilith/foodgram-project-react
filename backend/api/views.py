@@ -1,9 +1,11 @@
+from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 from djoser.views import UserViewSet
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import permissions, response, status
+from rest_framework.response import Response
 from recipes.models import Ingredient, Favorite, Recipe, Tag
 from users.models import Subscription, User
 from .filters import IngredientFilter
@@ -45,18 +47,17 @@ class FoodUserViewSet(UserViewSet):
             )
             serializer.is_valid(raise_exception=True)
             Subscription.objects.create(user=user, author=author)
-            return response.Response(
+            return Response(
                 serializer.data, status=status.HTTP_201_CREATED
             )
         try:
             subscription = Subscription.objects.get(user=user, author=author)
         except ObjectDoesNotExist:
-            return response.Response(
+            return Response(
                 {'errors': 'Вы не были подписаны на этого автора'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+                status=status.HTTP_400_BAD_REQUEST,)
         subscription.delete()
-        return response.Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TagViewSet(ModelViewSet):
@@ -66,7 +67,7 @@ class TagViewSet(ModelViewSet):
 
 class RecipeViewSet(ModelViewSet):
     queryset = Recipe.objects.all()
-    # serializer_class = RecipeSerializer
+    serializer_class = RecipeSerializer
 
     def get_queryset(self):
         recipes = Recipe.objects.prefetch_related(
@@ -82,23 +83,37 @@ class RecipeViewSet(ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    def add_favorite(self, request, model, id):
-        user = request.user
-        recipe = get_object_or_404(Recipe, id=id)
-        if request.method == 'POST':
-            model.objects.create(user=user, recipe=recipe)
-            return response.Response(
-                self.get_serializer(recipe).data,
-                status=status.HTTP_201_CREATED)
+    def add_favorite(self, user, recipe):
+        try:
+            Favorite.objects.create(user=user, recipe=recipe)
+        except IntegrityError:
+            return Response(
+                {'errors': 'Этот рецепт уже в избранном'},
+                status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            self.get_serializer(recipe).data,
+            status=status.HTTP_201_CREATED)
+
+    def delete_favorite(self, user, recipe):
+        try:
+            favorite = Favorite.objects.get(user=user, recipe=recipe)
+        except ObjectDoesNotExist:
+            return Response(
+                {'errors': 'Что мертво умереть не может'},
+                status=status.HTTP_400_BAD_REQUEST,)
+        favorite.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         detail=True,
         methods=('post', 'delete'),
     )
-    def favorite(self, request, id=None):
-        return self.add_favorite(
-            request, Favorite, id,
-        )
+    def favorite(self, request, pk):
+        user = request.user
+        recipe = get_object_or_404(Recipe, id=pk)
+        if request.method == 'POST':
+            return self.add_favorite(user, recipe)
+        return self.delete_favorite(user, recipe)
 
 
 class IngredientViewSet(ModelViewSet):

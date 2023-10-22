@@ -52,7 +52,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientSerializer(
         many=True, source='recipe_ingredient',
     )
-    is_favorited = serializers.BooleanField()
+    is_favorited = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Recipe
@@ -67,6 +67,9 @@ class RecipeSerializer(serializers.ModelSerializer):
             'cooking_time',
         )
         read_only_fields = ('is_favorite',)
+
+    def get_is_favorited(self, obj):
+        return self.context.get('request').user.favorite.filter(recipe=obj).exists()
 
 
 class AddIngredientSerializer(serializers.ModelSerializer):
