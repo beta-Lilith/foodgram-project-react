@@ -33,20 +33,20 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
 
-pdfmetrics.registerFont(TTFont('Montserrat-Bold', 'Montserrat-Bold.ttf'))
-pdfmetrics.registerFont(TTFont('Montserrat-Medium', 'Montserrat-Medium.ttf'))
-
-
 # PDF write settings
 START = 0
-BIG_FONT = 20
-SMALL_FONT = 13
+BIG_FONT = 'Montserrat-Bold'
+SMALL_FONT = 'Montserrat-Medium'
+BIG_FONT_SIZE = 20
+SMALL_FONT_SIZE = 13
 COLUMN_0 = 70
 COLUMN_1 = 220
 LINE_0 = 750
 LINE_1 = 700
 TEXT_0 = 'Список ингредиентов:'
 NEXT_LINE = 20
+
+
 
 
 class FoodUserViewSet(UserViewSet):
@@ -125,6 +125,23 @@ class RecipeViewSet(ModelViewSet):
         state.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    def set_font(self, doc, font, font_size):
+        pdfmetrics.registerFont(TTFont(font, font+'.ttf'))
+        doc.setFont(font, font_size)
+
+    def make_doc(self, buffer, ingredients, INGREDIENT, AMOUNT, UNIT):
+        doc = canvas.Canvas(buffer)
+        self.set_font(doc, BIG_FONT, BIG_FONT_SIZE)
+        doc.drawString(COLUMN_0, LINE_0, TEXT_0)
+        self.set_font(doc, SMALL_FONT, SMALL_FONT_SIZE)
+        y = LINE_1
+        for item in ingredients:
+            doc.drawString(COLUMN_0, y, f'- {item[INGREDIENT]}',)
+            doc.drawString(COLUMN_1, y, f'{str(item[AMOUNT])} {item[UNIT]}',)
+            y -= NEXT_LINE
+        doc.showPage()
+        doc.save()
+
     @action(
         detail=True,
         methods=('post', 'delete'))
@@ -159,17 +176,7 @@ class RecipeViewSet(ModelViewSet):
             recipe__shoppingcart__user=user
         ).values(INGREDIENT, UNIT,).annotate(amount=Sum(AMOUNT))
         buffer = io.BytesIO()
-        doc = canvas.Canvas(buffer)
-        doc.setFont('Montserrat-Bold', BIG_FONT)
-        doc.drawString(COLUMN_0, LINE_0, TEXT_0)
-        doc.setFont('Montserrat-Medium', SMALL_FONT)
-        y = LINE_1
-        for item in ingredients:
-            doc.drawString(COLUMN_0, y, f'- {item[INGREDIENT]}',)
-            doc.drawString(COLUMN_1, y, f'{str(item[AMOUNT])} {item[UNIT]}',)
-            y -= NEXT_LINE
-        doc.showPage()
-        doc.save()
+        self.make_doc(buffer, ingredients, INGREDIENT, AMOUNT, UNIT)
         buffer.seek(START)
         return FileResponse(
             buffer, as_attachment=True, filename='Shopping-list.pdf')
