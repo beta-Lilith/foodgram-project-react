@@ -15,8 +15,7 @@ class FoodUserSerializer(UserSerializer):
             'username',
             'first_name',
             'last_name',
-            'is_subscribed'
-        )
+            'is_subscribed')
 
     def get_is_subscribed(self, author):
         return author.following.filter(
@@ -32,14 +31,11 @@ class TagSerializer(serializers.ModelSerializer):
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(
-        source='ingredient.id'
-    )
+        source='ingredient.id')
     name = serializers.ReadOnlyField(
-        source='ingredient.name'
-    )
+        source='ingredient.name')
     measurement_unit = serializers.ReadOnlyField(
-        source='ingredient.measurement_unit'
-    )
+        source='ingredient.measurement_unit')
 
     class Meta:
         model = RecipeIngredient
@@ -50,8 +46,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
     author = FoodUserSerializer(read_only=True)
     ingredients = RecipeIngredientSerializer(
-        many=True, source='recipe_ingredient',
-    )
+        many=True, source='recipe_ingredient')
     is_favorited = serializers.SerializerMethodField(read_only=True)
     is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
 
@@ -66,8 +61,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             'is_in_shopping_cart',
             'name',
             'text',
-            'cooking_time',
-        )
+            'cooking_time')
         read_only_fields = ('is_favorite',)
 
     def get_is_favorited(self, obj):
@@ -101,16 +95,14 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'tags',
             'name',
             'text',
-            'cooking_time',
-        )
+            'cooking_time')
 
     def set_ingredients(self, recipe, ingredients):
         for data in ingredients:
             RecipeIngredient.objects.create(
                 recipe=recipe,
                 ingredient=Ingredient.objects.get(id=data['id']),
-                amount=data['amount'],
-            )
+                amount=data['amount'])
         return recipe
 
     def create(self, validated_data):
@@ -147,15 +139,13 @@ class RecipeCutFieldsSerializer(serializers.ModelSerializer):
 
 class SubscriptionSerializer(FoodUserSerializer):
     recipes = RecipeCutFieldsSerializer(
-        many=True, source='recipe', read_only=True
-    )
+        many=True, source='recipe', read_only=True)
     recipes_count = serializers.SerializerMethodField()
 
     class Meta(FoodUserSerializer.Meta):
         fields = FoodUserSerializer.Meta.fields + (
             'recipes',
-            'recipes_count',
-        )
+            'recipes_count')
         read_only_fields = ('username',)
 
     def get_recipes_count(self, author):
