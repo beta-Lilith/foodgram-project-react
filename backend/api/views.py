@@ -144,30 +144,28 @@ class RecipeViewSet(ModelViewSet):
     @action(
         detail=False)
     def download_shopping_cart(self, request):
+        INGREDIENT = 'ingredient__name'
+        UNIT = 'ingredient__measurement_unit'
+        AMOUNT = 'amount'
+
         user = request.user
         if not user.shoppingcart.exists():
             return Response(status=status.HTTP_400_BAD_REQUEST)
-
         buffer = io.BytesIO()
         doc = canvas.Canvas(buffer)
         pdfmetrics.registerFont(TTFont('Calibri', 'Calibri.ttf'))
         doc.setFont('Calibri', BIG_FONT)
-        doc.drawString(COLUMN_0, LINE_0, 'Список ингредиентов:')
+        doc.drawString(
+            COLUMN_0, LINE_0, 'Список ингредиентов:')
         ingredients = RecipeIngredient.objects.filter(
             recipe__shoppingcart__user=user
-        ).values(
-            'ingredient__name', 'ingredient__measurement_unit',
-        ).annotate(amount=Sum('amount'))
+        ).values(INGREDIENT, UNIT,).annotate(amount=Sum(AMOUNT))
         doc.setFont('Calibri', SMALL_FONT)
-        height = LINE_1
+        y = LINE_1
         for item in ingredients:
-            doc.drawString(
-                COLUMN_0, height, f'- {item["ingredient__name"]}',)
-            doc.drawString(
-                COLUMN_1, height, str(item['amount']),)
-            doc.drawString(
-                COLUMN_2, height, item['ingredient__measurement_unit'])
-            height -= NEXT_LINE
+            doc.drawString(COLUMN_0, y, f'- {item[INGREDIENT]}',)
+            doc.drawString(COLUMN_1, y, f'{str(item[AMOUNT])} {item[UNIT]}',)
+            y -= NEXT_LINE
         doc.showPage()
         doc.save()
         buffer.seek(START)
