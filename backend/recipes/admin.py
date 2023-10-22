@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Ingredient, Tag, Recipe, RecipeIngredient
+from .models import Ingredient, Tag, Recipe, RecipeIngredient, ShoppingCart
 
 
 @admin.register(Tag)
@@ -36,3 +36,10 @@ class IngredientAdmin(admin.ModelAdmin):
     empty_value_display = '-пусто-'
 
 
+@admin.register(ShoppingCart)
+class ShoppingCartAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'user', 'recipe',
+    )
+    search_fields = ('recipe',)
+    empty_value_display = '-пусто-'

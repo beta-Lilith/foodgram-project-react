@@ -53,6 +53,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         many=True, source='recipe_ingredient',
     )
     is_favorited = serializers.SerializerMethodField(read_only=True)
+    is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Recipe
@@ -62,6 +63,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             'author',
             'ingredients',
             'is_favorited',
+            'is_in_shopping_cart',
             'name',
             'text',
             'cooking_time',
@@ -70,6 +72,9 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         return self.context.get('request').user.favorite.filter(recipe=obj).exists()
+
+    def get_is_in_shopping_cart(self, obj):
+        return self.context.get('request').user.shoppingcart.filter(recipe=obj).exists()
 
 
 class AddIngredientSerializer(serializers.ModelSerializer):

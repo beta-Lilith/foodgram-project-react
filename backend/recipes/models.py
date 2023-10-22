@@ -63,6 +63,9 @@ class Recipe(models.Model):
         # add validation > 1
     )
 
+    def __str__(self):
+        return self.name
+
 
 class Ingredient(models.Model):
     name = models.CharField(
@@ -97,19 +100,24 @@ class RecipeIngredient(models.Model):
     amount = models.PositiveIntegerField()
 
 
-class Favorite(models.Model):
+class UserRecipe(models.Model):
     user = models.ForeignKey(
         User,
         verbose_name='пользователь',
-        related_name='favorite',
+        related_name='%(class)s',
         on_delete=models.CASCADE,
     )
     recipe = models.ForeignKey(
         Recipe,
         verbose_name='рецепт',
-        related_name='favorite',
         on_delete=models.CASCADE,
     )
+
+    class Meta:
+        abstract = True
+
+
+class Favorite(UserRecipe):
 
     class Meta:
         verbose_name = 'избранное'
@@ -117,5 +125,17 @@ class Favorite(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=('user', 'recipe',),
-                name='unique_favorite_recipe',
-            ),]
+                name='unique_favorite',
+            )]
+
+
+class ShoppingCart(UserRecipe):
+
+    class Meta:
+        verbose_name = 'корзина'
+        verbose_name_plural = 'корзина'
+        constraints = [
+            models.UniqueConstraint(
+                fields=('user', 'recipe',),
+                name='unique_shopping_cart',
+            )]

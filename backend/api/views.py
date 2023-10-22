@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import permissions, response, status
 from rest_framework.response import Response
-from recipes.models import Ingredient, Favorite, Recipe, Tag
+from recipes.models import Ingredient, Favorite, ShoppingCart, Recipe, Tag
 from users.models import Subscription, User
 from .filters import IngredientFilter
 from .serializers import (
@@ -15,11 +15,13 @@ from .serializers import (
     SubscriptionSerializer,
     TagSerializer,
     RecipeCreateSerializer,
+    RecipeCutFieldsSerializer,
     RecipeSerializer,
 )
 
 
 class FoodUserViewSet(UserViewSet):
+
     @action(
         detail=False,
     )
@@ -60,14 +62,7 @@ class FoodUserViewSet(UserViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class TagViewSet(ModelViewSet):
-    queryset = Tag.objects.all()
-    serializer_class = TagSerializer
-
-
 class RecipeViewSet(ModelViewSet):
-    queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
 
     def get_queryset(self):
         recipes = Recipe.objects.prefetch_related(
@@ -78,30 +73,32 @@ class RecipeViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.request.method in permissions.SAFE_METHODS:
             return RecipeSerializer
+        if self.action in ('favorite', 'shopping_cart',):
+            return RecipeCutFieldsSerializer
         return RecipeCreateSerializer
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    def add_favorite(self, user, recipe):
+    def add_recipe(self, user, recipe, model):
         try:
-            Favorite.objects.create(user=user, recipe=recipe)
+            model.objects.create(user=user, recipe=recipe)
         except IntegrityError:
             return Response(
-                {'errors': 'Этот рецепт уже в избранном'},
+                {'errors': 'Этот рецепт уже добавлен'},
                 status=status.HTTP_400_BAD_REQUEST)
         return Response(
             self.get_serializer(recipe).data,
             status=status.HTTP_201_CREATED)
 
-    def delete_favorite(self, user, recipe):
+    def delete_recipe(self, user, recipe, model):
         try:
-            favorite = Favorite.objects.get(user=user, recipe=recipe)
+            state = model.objects.get(user=user, recipe=recipe)
         except ObjectDoesNotExist:
             return Response(
                 {'errors': 'Что мертво умереть не может'},
                 status=status.HTTP_400_BAD_REQUEST,)
-        favorite.delete()
+        state.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
@@ -112,8 +109,19 @@ class RecipeViewSet(ModelViewSet):
         user = request.user
         recipe = get_object_or_404(Recipe, id=pk)
         if request.method == 'POST':
-            return self.add_favorite(user, recipe)
-        return self.delete_favorite(user, recipe)
+            return self.add_recipe(user, recipe, Favorite)
+        return self.delete_recipe(user, recipe, Favorite)
+
+    @action(
+        detail=True,
+        methods=('post', 'delete'),
+    )
+    def shopping_cart(self, request, pk):
+        user = request.user
+        recipe = get_object_or_404(Recipe, id=pk)
+        if request.method == 'POST':
+            return self.add_recipe(user, recipe, ShoppingCart)
+        return self.delete_recipe(user, recipe, ShoppingCart)
 
 
 class IngredientViewSet(ModelViewSet):
@@ -122,3 +130,8 @@ class IngredientViewSet(ModelViewSet):
     filter_backends = (IngredientFilter,)
     search_fields = ('name',)
     pagination_class = None
+
+
+class TagViewSet(ModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
