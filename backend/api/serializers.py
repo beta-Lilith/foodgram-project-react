@@ -2,6 +2,7 @@ from rest_framework import serializers
 from djoser.serializers import UserSerializer, UserCreateSerializer
 from recipes.models import Ingredient, Tag, Recipe, RecipeIngredient
 from users.models import Subscription, User
+from drf_extra_fields.fields import Base64ImageField
 
 
 class FoodUserSerializer(UserSerializer):
@@ -61,6 +62,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         many=True, source='recipe_ingredient')
     is_favorited = serializers.SerializerMethodField(read_only=True)
     is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
+    image = Base64ImageField()
 
     class Meta:
         model = Recipe
@@ -72,6 +74,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             'is_favorited',
             'is_in_shopping_cart',
             'name',
+            'image',
             'text',
             'cooking_time')
         read_only_fields = ('is_favorite',)
@@ -98,6 +101,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     # tags = serializers.PrimaryKeyRelatedField(
     #     queryset=Tag.objects.all(), many=True
     # )
+    image = Base64ImageField()
 
     class Meta:
         model = Recipe
@@ -106,6 +110,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'ingredients',
             'tags',
             'name',
+            'image',
             'text',
             'cooking_time')
 
@@ -144,9 +149,11 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
 
 class RecipeCutFieldsSerializer(serializers.ModelSerializer):
+    image = Base64ImageField()
+
     class Meta:
         model = Recipe
-        fields = ('id', 'name', 'cooking_time')
+        fields = ('id', 'name', 'image', 'cooking_time')
 
 
 class SubscriptionSerializer(FoodUserSerializer):
