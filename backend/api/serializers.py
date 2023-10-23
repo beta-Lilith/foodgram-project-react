@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from djoser.serializers import UserSerializer
+from djoser.serializers import UserSerializer, UserCreateSerializer
 from recipes.models import Ingredient, Tag, Recipe, RecipeIngredient
 from users.models import Subscription, User
 
@@ -21,6 +21,18 @@ class FoodUserSerializer(UserSerializer):
         return author.following.filter(
             user=self.context.get('request').user
         ).exists()
+
+
+class FoodUserCreateSerializer(UserCreateSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'password')
 
 
 class TagSerializer(serializers.ModelSerializer):

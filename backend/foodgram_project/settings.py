@@ -9,9 +9,11 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
-
+import os
 from pathlib import Path
+from dotenv import load_dotenv
 
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -23,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-2z2uf-)#7l=yk$9o=x_c*(=t)zk=8h92hyb3-p=pf$9pr-wxr+'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG') == 'True'
 
 ALLOWED_HOSTS = []
 
@@ -65,6 +67,7 @@ DJOSER = {
     'SERIALIZERS': {
         'user': 'api.serializers.FoodUserSerializer',
         'current_user': 'api.serializers.FoodUserSerializer',
+        'user_create': 'api.serializers.FoodUserCreateSerializer',
     },
 }
 
