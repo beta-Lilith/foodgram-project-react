@@ -22,17 +22,14 @@ AMOUNT_ERROR = 'Минимальное значение = 1'
 class Tag(models.Model):
     name = models.CharField(
         'имя',
-        max_length=TAG_NAME_LENGTH,
-    )
+        max_length=TAG_NAME_LENGTH)
     color = models.CharField(
         'цвет',
-        max_length=TAG_COLOR_LENGTH,
-    )
+        max_length=TAG_COLOR_LENGTH)
     slug = models.SlugField(
         'URL-адрес',
         max_length=TAG_COLOR_LENGTH,
-        unique=True
-    )
+        unique=True)
 
     class Meta:
         verbose_name = 'тэг'
@@ -46,35 +43,28 @@ class Recipe(models.Model):
     tags = models.ManyToManyField(
         Tag,
         verbose_name='тэг',
-        related_name='recipe'
-    )
+        related_name='recipe')
     author = models.ForeignKey(
         User,
         verbose_name='автор',
         related_name='recipe',
-        on_delete=models.CASCADE,
-    )
+        on_delete=models.CASCADE)
     ingredients = models.ManyToManyField(
         'Ingredient',
         verbose_name='ингредиент',
         through='RecipeIngredient',
-        through_fields=('recipe', 'ingredient'),
-    )
+        through_fields=('recipe', 'ingredient'))
     name = models.CharField(
         'название',
-        max_length=RECIPE_NAME_LENGTH
-    )
+        max_length=RECIPE_NAME_LENGTH)
     image = models.ImageField(
         'изображение',
-        upload_to='recipe_images/'
-    )
+        upload_to='recipe_images/')
     text = models.TextField(
-        'рецепт'
-    )
+        'рецепт')
     cooking_time = models.PositiveIntegerField(
         'время приготовления',
-        validators=(MinValueValidator(COOK_MIN, COOK_ERROR),),
-    )
+        validators=(MinValueValidator(COOK_MIN, COOK_ERROR),))
 
     class Meta:
         verbose_name = 'рецепт'
@@ -88,12 +78,10 @@ class Recipe(models.Model):
 class Ingredient(models.Model):
     name = models.CharField(
         'название',
-        max_length=INGREDIENT_NAME_LENGTH,
-    )
+        max_length=INGREDIENT_NAME_LENGTH)
     measurement_unit = models.CharField(
         'единица измерения',
-        max_length=INGREDIENT_MEASURE_LENGTH,
-    )
+        max_length=INGREDIENT_MEASURE_LENGTH)
 
     class Meta:
         verbose_name = 'ингредиент'
@@ -109,18 +97,15 @@ class RecipeIngredient(models.Model):
         Recipe,
         verbose_name='рецепт',
         related_name='recipe_ingredient',
-        on_delete=models.CASCADE,
-    )
+        on_delete=models.CASCADE)
     ingredient = models.ForeignKey(
         Ingredient,
         verbose_name='ингредиент',
         # related_name='recipe_ingredient',
-        on_delete=models.CASCADE,
-    )
+        on_delete=models.CASCADE)
     amount = models.PositiveIntegerField(
         'количество',
-        validators=(MinValueValidator(AMOUNT_MIN, AMOUNT_ERROR),),
-    )
+        validators=(MinValueValidator(AMOUNT_MIN, AMOUNT_ERROR),))
 
     class Meta:
         verbose_name = 'Ингредиент в рецепте'
@@ -135,14 +120,12 @@ class UserRecipe(models.Model):
         User,
         verbose_name='пользователь',
         related_name='%(class)s',
-        on_delete=models.CASCADE,
-    )
+        on_delete=models.CASCADE)
     recipe = models.ForeignKey(
         Recipe,
         verbose_name='рецепт',
         related_name='%(class)s',
-        on_delete=models.CASCADE,
-    )
+        on_delete=models.CASCADE)
 
     class Meta:
         abstract = True
