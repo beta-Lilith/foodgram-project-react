@@ -17,6 +17,7 @@ from recipes.models import (
 )
 from users.models import Subscription, User
 from .filters import IngredientFilter, RecipeFilter
+from .permissions import ReadOnly, IsAdmin, IsAuthor
 from .serializers import (
     FoodUserSerializer,
     IngredientSerializer,
@@ -29,28 +30,32 @@ from .serializers import (
 import io
 from django.http import FileResponse
 from reportlab.pdfgen import canvas
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
 
-
-# PDF write settings
-START = 0
-BIG_FONT = 'Montserrat-Bold'
-SMALL_FONT = 'Montserrat-Medium'
-BIG_FONT_SIZE = 20
-SMALL_FONT_SIZE = 13
-COLUMN_0 = 70
-COLUMN_1 = 220
-LINE_0 = 750
-LINE_1 = 700
-TEXT_0 = 'Список ингредиентов:'
-NEXT_LINE = 20
+from foodgram_project.settings import (
+    START,
+    BIG_FONT,
+    SMALL_FONT,
+    BIG_FONT_SIZE,
+    SMALL_FONT_SIZE,
+    COLUMN_0,
+    COLUMN_1,
+    LINE_0,
+    LINE_1,
+    TEXT_0,
+    NEXT_LINE)
+from rest_framework.permissions import (
+    IsAuthenticatedOrReadOnly,
+    IsAuthenticated,
+    AllowAny
+)
 
 
 class FoodUserViewSet(UserViewSet):
+    # permission_classes = (ReadOnly,)
 
     @action(
-        detail=False)
+        detail=False,
+        permission_classes=(IsAuthor | IsAdmin,))
     def subscriptions(self, request):
         queryset = User.objects.filter(following__user=request.user)
         serializer = SubscriptionSerializer(
@@ -61,7 +66,8 @@ class FoodUserViewSet(UserViewSet):
 
     @action(
         detail=True,
-        methods=('post', 'delete',))
+        methods=('post', 'delete',),
+        permission_classes=(IsAuthor | IsAdmin,))
     def subscribe(self, request, id=None):
         author = get_object_or_404(User, id=id)
         user = request.user
@@ -86,6 +92,7 @@ class FoodUserViewSet(UserViewSet):
 
 class RecipeViewSet(ModelViewSet):
     filterset_class = RecipeFilter
+    permission_classes = (ReadOnly | IsAuthor | IsAdmin,)
 
     def get_queryset(self):
         recipes = Recipe.objects.prefetch_related(
@@ -124,15 +131,11 @@ class RecipeViewSet(ModelViewSet):
         state.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def set_font(self, doc, font, font_size):
-        pdfmetrics.registerFont(TTFont(font, font+'.ttf'))
-        doc.setFont(font, font_size)
-
     def make_doc(self, buffer, ingredients, INGREDIENT, AMOUNT, UNIT):
         doc = canvas.Canvas(buffer)
-        self.set_font(doc, BIG_FONT, BIG_FONT_SIZE)
+        doc.setFont(BIG_FONT, BIG_FONT_SIZE)
         doc.drawString(COLUMN_0, LINE_0, TEXT_0)
-        self.set_font(doc, SMALL_FONT, SMALL_FONT_SIZE)
+        doc.setFont(SMALL_FONT, SMALL_FONT_SIZE)
         y = LINE_1
         for item in ingredients:
             doc.drawString(COLUMN_0, y, f'- {item[INGREDIENT]}',)
@@ -186,9 +189,11 @@ class IngredientViewSet(ModelViewSet):
     serializer_class = IngredientSerializer
     filterset_class = IngredientFilter
     pagination_class = None
+    permission_classes = (ReadOnly | IsAdmin,)
 
 
 class TagViewSet(ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     pagination_class = None
+    permission_classes = (ReadOnly | IsAuthor | IsAdmin,)

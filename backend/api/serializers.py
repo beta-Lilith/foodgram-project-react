@@ -1,8 +1,18 @@
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 from djoser.serializers import UserSerializer, UserCreateSerializer
 from recipes.models import Ingredient, Tag, Recipe, RecipeIngredient
 from users.models import Subscription, User
 from drf_extra_fields.fields import Base64ImageField
+
+
+def check_is_anonymous(func):
+    def wrapper(self, author):
+        user = self.context.get('request').user
+        if user.is_anonymous:
+            return False
+        return func(self, author)
+    return wrapper
 
 
 class FoodUserSerializer(UserSerializer):
@@ -16,8 +26,9 @@ class FoodUserSerializer(UserSerializer):
             'username',
             'first_name',
             'last_name',
-            'is_subscribed')
+            'is_subscribed',)
 
+    @check_is_anonymous
     def get_is_subscribed(self, author):
         return author.following.filter(
             user=self.context.get('request').user
@@ -25,6 +36,9 @@ class FoodUserSerializer(UserSerializer):
 
 
 class FoodUserCreateSerializer(UserCreateSerializer):
+    email = serializers.EmailField(
+        validators=(UniqueValidator(queryset=User.objects.all()),))
+
     class Meta:
         model = User
         fields = (
@@ -33,13 +47,19 @@ class FoodUserCreateSerializer(UserCreateSerializer):
             'username',
             'first_name',
             'last_name',
-            'password')
+            'password',)
+        extra_kwargs = {
+            'email': {'required': True},
+            'username': {'required': True},
+            'first_name': {'required': True},
+            'last_name': {'required': True},
+            'password': {'required': True}}
 
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = ('id', 'name', 'color', 'slug')
+        fields = ('id', 'name', 'color', 'slug',)
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
@@ -52,7 +72,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RecipeIngredient
-        fields = ('id', 'name', 'measurement_unit', 'amount')
+        fields = ('id', 'name', 'measurement_unit', 'amount',)
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -76,14 +96,19 @@ class RecipeSerializer(serializers.ModelSerializer):
             'name',
             'image',
             'text',
-            'cooking_time')
-        read_only_fields = ('is_favorite',)
+            'cooking_time',)
+        read_only_fields = ('is_favorite', 'is_in_shopping_cart', 'id', 'tags', 'author')
+        # Разобраться с рид онли
 
+    @check_is_anonymous
     def get_is_favorited(self, obj):
-        return self.context.get('request').user.favorite.filter(recipe=obj).exists()
+        return self.context.get(
+            'request').user.favorite.filter(recipe=obj).exists()
 
+    @check_is_anonymous
     def get_is_in_shopping_cart(self, obj):
-        return self.context.get('request').user.shoppingcart.filter(recipe=obj).exists()
+        return self.context.get(
+            'request').user.shoppingcart.filter(recipe=obj).exists()
 
 
 class AddIngredientSerializer(serializers.ModelSerializer):
@@ -112,7 +137,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'name',
             'image',
             'text',
-            'cooking_time')
+            'cooking_time',)
 
     def set_ingredients(self, recipe, ingredients):
         for data in ingredients:
@@ -153,7 +178,7 @@ class RecipeCutFieldsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = ('id', 'name', 'image', 'cooking_time')
+        fields = ('id', 'name', 'image', 'cooking_time',)
 
 
 class SubscriptionSerializer(FoodUserSerializer):
@@ -164,7 +189,7 @@ class SubscriptionSerializer(FoodUserSerializer):
     class Meta(FoodUserSerializer.Meta):
         fields = FoodUserSerializer.Meta.fields + (
             'recipes',
-            'recipes_count')
+            'recipes_count',)
         read_only_fields = ('username',)
 
     def get_recipes_count(self, author):
