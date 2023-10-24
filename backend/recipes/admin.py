@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django import forms
 
 from .models import (
     Ingredient,
@@ -27,8 +26,7 @@ class RecipeIngredientInLine(admin.StackedInline):
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'name', 'text', 'cooking_time', 'count_in_favorites',
-    )
+        'id', 'name', 'text', 'cooking_time', 'count_in_favorites')
     readonly_fields = ('count_in_favorites',)
     inlines = (RecipeIngredientInLine,)
     search_fields = ('name',)

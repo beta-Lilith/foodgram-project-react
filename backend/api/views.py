@@ -16,7 +16,7 @@ from recipes.models import (
     Tag,
 )
 from users.models import Subscription, User
-from .filters import IngredientFilter
+from .filters import IngredientFilter, RecipeFilter
 from .serializers import (
     FoodUserSerializer,
     IngredientSerializer,
@@ -45,8 +45,6 @@ LINE_0 = 750
 LINE_1 = 700
 TEXT_0 = 'Список ингредиентов:'
 NEXT_LINE = 20
-
-
 
 
 class FoodUserViewSet(UserViewSet):
@@ -87,6 +85,7 @@ class FoodUserViewSet(UserViewSet):
 
 
 class RecipeViewSet(ModelViewSet):
+    filterset_class = RecipeFilter
 
     def get_queryset(self):
         recipes = Recipe.objects.prefetch_related(
@@ -185,8 +184,7 @@ class RecipeViewSet(ModelViewSet):
 class IngredientViewSet(ModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    filter_backends = (IngredientFilter,)
-    search_fields = ('name',)
+    filterset_class = IngredientFilter
     pagination_class = None
 
 
