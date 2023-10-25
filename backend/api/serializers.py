@@ -3,9 +3,22 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueValidator
 from djoser.serializers import UserSerializer, UserCreateSerializer
 from recipes.models import Ingredient, Tag, Recipe, RecipeIngredient
-from users.models import Subscription, User
+from users.models import User
 from drf_extra_fields.fields import Base64ImageField
 from django.core.exceptions import ObjectDoesNotExist
+
+
+NO_INGREDIENTS = 'Добавьте ингридиенты'
+NO_INGREDIENTS_DB = 'Этого ингредиента нет в базе'
+INGREDIENTS_UNIQUE = 'Ингредиенты должны быть уникальными'
+
+NO_TAGS = 'Добавьте теги'
+TAGS_UNIQUE = 'Теги должны быть уникальными'
+
+NO_IMAGE = 'Добавьте картинку'
+
+RECIPE_NO_INGREDIENTS = 'Ингредиенты обязательны для рецепта'
+RECIPE_NO_TAGS = 'Нужен хотя бы один тег'
 
 
 def check_is_anonymous(func):
@@ -143,25 +156,25 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def validate_ingredients(self, value):
         if not value:
-            raise ValidationError('Добавьте ингридиенты')
+            raise ValidationError(NO_INGREDIENTS)
         ingredients = [
             ingredient_id['id']
             for ingredient_id
             in value]
         if len(ingredients) != len(set(ingredients)):
-            raise ValidationError('Ингредиенты должны быть уникальными')
+            raise ValidationError(INGREDIENTS_UNIQUE)
         return value
 
     def validate_tags(self, value):
         if not value:
-            raise ValidationError('Добавьте теги')
+            raise ValidationError(NO_TAGS)
         if len(value) != len(set(value)):
-            raise ValidationError('Теги должны быть уникальными')
+            raise ValidationError(TAGS_UNIQUE)
         return value
 
     def validate_image(self, value):
         if not value:
-            raise ValidationError('Добавьте картинку')
+            raise ValidationError(NO_IMAGE)
         return value
 
     def set_ingredients(self, recipe, ingredients):
@@ -172,7 +185,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                     ingredient=Ingredient.objects.get(id=data['id']),
                     amount=data['amount'])
             except ObjectDoesNotExist:
-                raise ValidationError('Этого ингредиента нет в базе')
+                raise ValidationError(NO_INGREDIENTS_DB)
         return recipe
 
     def create(self, validated_data):
@@ -185,10 +198,10 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def update(self, recipe, validated_data):
         if not validated_data.get('ingredients'):
-            raise ValidationError('Ингредиенты обязательны для рецепта')
+            raise ValidationError(RECIPE_NO_INGREDIENTS)
         ingredients = validated_data.pop('ingredients')
         if not validated_data.get('tags'):
-            raise ValidationError('Нужен хотя бы один тег')
+            raise ValidationError(RECIPE_NO_TAGS)
         tags = validated_data.pop('tags')
         recipe = super().update(recipe, validated_data)
         recipe.tags.clear()

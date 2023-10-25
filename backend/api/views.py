@@ -1,7 +1,5 @@
-from django.db import IntegrityError
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404
-from django.core.exceptions import ObjectDoesNotExist
 from djoser.views import UserViewSet
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -20,7 +18,6 @@ from users.models import Subscription, User
 from .filters import IngredientFilter, RecipeFilter
 from .permissions import ReadOnly, IsAdmin, IsAuthor
 from .serializers import (
-    FoodUserSerializer,
     IngredientSerializer,
     SubscriptionSerializer,
     TagSerializer,
@@ -43,12 +40,16 @@ from foodgram_project.settings import (
     LINE_0,
     LINE_1,
     TEXT_0,
-    NEXT_LINE)
-from rest_framework.permissions import (
-    IsAuthenticatedOrReadOnly,
-    IsAuthenticated,
-    AllowAny
-)
+    NEXT_LINE,
+    FILENAME)
+
+
+SELF_SUBSCRIPTION = 'Вы не можете подписаться на себя'
+SUBSRIPTION_UNIQUE = 'Вы уже подписаны на этого автора'
+DEL_SUBSRIPTION_UNIQUE = 'Вы не были подписаны на этого автора'
+
+RECIPE_UNIQUE = 'Этот рецепт уже добавлен'
+DEL_RECIPE_UNIQUE = 'Что мертво умереть не может'
 
 
 class FoodUserViewSet(UserViewSet):
@@ -77,30 +78,22 @@ class FoodUserViewSet(UserViewSet):
     def subscribe(self, request, id=None):
         author = get_object_or_404(User, id=id)
         user = request.user
+        subscription = Subscription.objects.filter(user=user, author=author)
         if request.method == 'POST':
             if author == user:
-                return Response(
-                    {'errors': 'Вы не можете подписаться на себя'},
-                    status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError(SELF_SUBSCRIPTION)
+            if subscription.exists():
+                raise ValidationError(SUBSRIPTION_UNIQUE)
+            Subscription.objects.create(user=user, author=author)
             serializer = SubscriptionSerializer(
                 author,
                 data=request.data,
                 context={'request': request})
             serializer.is_valid(raise_exception=True)
-            try:
-                Subscription.objects.create(user=user, author=author)
-            except IntegrityError:
-                return Response(
-                    {'errors': 'Вы уже подписаны на этого автора'},
-                    status=status.HTTP_400_BAD_REQUEST)
             return Response(
                 serializer.data, status=status.HTTP_201_CREATED)
-        try:
-            subscription = Subscription.objects.get(user=user, author=author)
-        except ObjectDoesNotExist:
-            return Response(
-                {'errors': 'Вы не были подписаны на этого автора'},
-                status=status.HTTP_400_BAD_REQUEST,)
+        if not subscription.exists():
+            raise ValidationError(DEL_SUBSRIPTION_UNIQUE)
         subscription.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -127,7 +120,7 @@ class RecipeViewSet(ModelViewSet):
 
     def add_recipe(self, user, recipe, model):
         if model.objects.filter(user=user, recipe=recipe).exists():
-            raise ValidationError('Этот рецепт уже добавлен')
+            raise ValidationError(RECIPE_UNIQUE)
         model.objects.create(user=user, recipe=recipe)
         return Response(
             self.get_serializer(recipe).data,
@@ -136,7 +129,7 @@ class RecipeViewSet(ModelViewSet):
     def delete_recipe(self, user, recipe, model):
         recipe_in_model = model.objects.filter(user=user, recipe=recipe)
         if not recipe_in_model.exists():
-            raise ValidationError('Что мертво умереть не может')
+            raise ValidationError(DEL_RECIPE_UNIQUE)
         recipe_in_model.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -190,7 +183,7 @@ class RecipeViewSet(ModelViewSet):
         self.make_doc(buffer, ingredients, INGREDIENT, AMOUNT, UNIT)
         buffer.seek(START)
         return FileResponse(
-            buffer, as_attachment=True, filename='Shopping-list.pdf')
+            buffer, as_attachment=True, filename=FILENAME)
 
 
 class IngredientViewSet(ReadOnlyModelViewSet):

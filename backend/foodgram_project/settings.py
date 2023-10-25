@@ -160,7 +160,15 @@ CSVDATA_ROOT = BASE_DIR / 'data'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
+# Models fields length
+LENGTH = {
+    'TAG_NAME': 200,
+    'TAG_COLOR': 7,
+    'TAG_SLUG': 200,
+    'RECIPE_NAME': 200,
+    'INGREDIENT_NAME': 200,
+    'INGREDIENT_MEASURE': 200,
+}
 # PDF write settings
 START = 0
 COLUMN_0 = 70
@@ -169,6 +177,7 @@ LINE_0 = 750
 LINE_1 = 700
 TEXT_0 = 'Список ингредиентов:'
 NEXT_LINE = 20
+FILENAME = 'Shopping-list.pdf'
 
 # PDF fonts settings
 BIG_FONT = 'Montserrat-Bold'

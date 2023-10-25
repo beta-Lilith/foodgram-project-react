@@ -1,16 +1,8 @@
 from django.core.validators import MinValueValidator
 from django.db import models
 from users.models import User
+from foodgram_project.settings import LENGTH
 
-
-TAG_NAME_LENGTH = 200
-TAG_COLOR_LENGTH = 7
-TAG_SLUG_LENGTH = 200
-
-RECIPE_NAME_LENGTH = 200
-
-INGREDIENT_NAME_LENGTH = 200
-INGREDIENT_MEASURE_LENGTH = 200
 
 COOK_MIN = 1
 COOK_ERROR = 'Минимальное значение = 1'
@@ -22,18 +14,18 @@ AMOUNT_ERROR = 'Минимальное значение = 1'
 class Tag(models.Model):
     name = models.CharField(
         'имя',
-        max_length=TAG_NAME_LENGTH)
+        max_length=LENGTH['TAG_NAME'])
     color = models.CharField(
         'цвет',
-        max_length=TAG_COLOR_LENGTH)
+        max_length=LENGTH['TAG_COLOR'])
     slug = models.SlugField(
         'URL-адрес',
-        max_length=TAG_COLOR_LENGTH,
+        max_length=LENGTH['TAG_SLUG'],
         unique=True)
 
     class Meta:
-        verbose_name = 'тэг'
-        verbose_name_plural = 'тэги'
+        verbose_name = 'тег'
+        verbose_name_plural = 'теги'
 
     def __str__(self):
         return self.name
@@ -42,7 +34,7 @@ class Tag(models.Model):
 class Recipe(models.Model):
     tags = models.ManyToManyField(
         Tag,
-        verbose_name='тэг',
+        verbose_name='тег',
         related_name='recipe')
     author = models.ForeignKey(
         User,
@@ -56,7 +48,7 @@ class Recipe(models.Model):
         through_fields=('recipe', 'ingredient'))
     name = models.CharField(
         'название',
-        max_length=RECIPE_NAME_LENGTH)
+        max_length=LENGTH['RECIPE_NAME'])
     image = models.ImageField(
         'изображение',
         upload_to='recipe_images/')
@@ -78,10 +70,10 @@ class Recipe(models.Model):
 class Ingredient(models.Model):
     name = models.CharField(
         'название',
-        max_length=INGREDIENT_NAME_LENGTH)
+        max_length=LENGTH['INGREDIENT_NAME'])
     measurement_unit = models.CharField(
         'единица измерения',
-        max_length=INGREDIENT_MEASURE_LENGTH)
+        max_length=LENGTH['INGREDIENT_MEASURE'])
 
     class Meta:
         verbose_name = 'ингредиент'
