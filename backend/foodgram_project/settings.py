@@ -64,7 +64,7 @@ DJOSER = {
     },
     'PERMISSIONS': {
         'user': ['rest_framework.permissions.IsAuthenticatedOrReadOnly'],
-        'user_list': ['rest_framework.permissions.AllowAny'] # Check here
+        'user_list': ['rest_framework.permissions.AllowAny']
     },
 }
 
@@ -183,5 +183,5 @@ BIG_FONT = 'Montserrat-Bold'
 SMALL_FONT = 'Montserrat-Medium'
 BIG_FONT_SIZE = 20
 SMALL_FONT_SIZE = 13
-pdfmetrics.registerFont(TTFont(BIG_FONT, BIG_FONT+'.ttf'))
-pdfmetrics.registerFont(TTFont(SMALL_FONT, SMALL_FONT+'.ttf'))
+pdfmetrics.registerFont(TTFont(BIG_FONT, BIG_FONT + '.ttf'))
+pdfmetrics.registerFont(TTFont(SMALL_FONT, SMALL_FONT + '.ttf'))

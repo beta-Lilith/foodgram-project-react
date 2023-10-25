@@ -112,8 +112,6 @@ class RecipeSerializer(serializers.ModelSerializer):
             'image',
             'text',
             'cooking_time',)
-        read_only_fields = ('is_favorite', 'is_in_shopping_cart',) # 'id', 'tags', 'author',)
-        # Разобраться с рид онли
 
     @check_is_anonymous
     def get_is_favorited(self, obj):
@@ -129,7 +127,6 @@ class RecipeSerializer(serializers.ModelSerializer):
 class AddIngredientSerializer(serializers.ModelSerializer):
 
     id = serializers.IntegerField()
-    # amount = serializers.IntegerField()
 
     class Meta:
         model = RecipeIngredient
@@ -138,9 +135,6 @@ class AddIngredientSerializer(serializers.ModelSerializer):
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
     ingredients = AddIngredientSerializer(many=True,)
-    # tags = serializers.PrimaryKeyRelatedField(
-    #     queryset=Tag.objects.all(), many=True
-    # )
     image = Base64ImageField()
 
     class Meta:
@@ -227,8 +221,6 @@ class RecipeCutFieldsSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(FoodUserSerializer):
-    # recipes = RecipeCutFieldsSerializer(
-    #     many=True, source='recipe', read_only=True)
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 

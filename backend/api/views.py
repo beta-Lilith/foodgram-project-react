@@ -172,11 +172,9 @@ class IngredientViewSet(ReadOnlyModelViewSet):
     serializer_class = IngredientSerializer
     filterset_class = IngredientFilter
     pagination_class = None
-    # permission_classes = (ReadOnly | IsAdmin,)
 
 
 class TagViewSet(ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     pagination_class = None
-    # permission_classes = (ReadOnly | IsAdmin,)
