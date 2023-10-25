@@ -1,10 +1,9 @@
 import os
 from pathlib import Path
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-
 
 load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.

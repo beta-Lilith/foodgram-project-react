@@ -1,13 +1,12 @@
 import csv
 import os
-from tqdm import tqdm
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db.utils import IntegrityError
+from tqdm import tqdm
 
 from recipes.models import Ingredient
-
 
 INTEGRITY_ERR = 'Ингридиет {name} уже есть в базе'
 FILE_NOT_FOUND = 'Не найден CSV файл в директории {file_path}'

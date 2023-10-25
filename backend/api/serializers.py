@@ -1,12 +1,12 @@
+from django.core.exceptions import ObjectDoesNotExist
+from djoser.serializers import UserCreateSerializer, UserSerializer
+from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueValidator
-from djoser.serializers import UserSerializer, UserCreateSerializer
-from recipes.models import Ingredient, Tag, Recipe, RecipeIngredient
-from users.models import User
-from drf_extra_fields.fields import Base64ImageField
-from django.core.exceptions import ObjectDoesNotExist
 
+from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
+from users.models import User
 
 NO_INGREDIENTS = 'Добавьте ингридиенты'
 NO_INGREDIENTS_DB = 'Этого ингредиента нет в базе'

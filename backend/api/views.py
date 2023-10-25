@@ -1,48 +1,29 @@
+import io
+
 from django.db.models import Sum
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
+from reportlab.pdfgen import canvas
+from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
-from rest_framework import permissions, status
 from rest_framework.response import Response
-from recipes.models import (
-    Ingredient,
-    Favorite,
-    ShoppingCart,
-    Recipe,
-    RecipeIngredient,
-    Tag,
-)
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
+
+from foodgram_project.settings import (BIG_FONT, BIG_FONT_SIZE, COLUMN_0,
+                                       COLUMN_1, FILENAME, LINE_0, LINE_1,
+                                       NEXT_LINE, SMALL_FONT, SMALL_FONT_SIZE,
+                                       START, TEXT_0)
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingCart, Tag)
 from users.models import Subscription, User
+
 from .filters import IngredientFilter, RecipeFilter
-from .permissions import ReadOnly, IsAdmin, IsAuthor
-from .serializers import (
-    IngredientSerializer,
-    SubscriptionSerializer,
-    TagSerializer,
-    RecipeCreateSerializer,
-    RecipeCutFieldsSerializer,
-    RecipeSerializer,
-)
-import io
-from django.http import FileResponse
-from reportlab.pdfgen import canvas
-
-from foodgram_project.settings import (
-    START,
-    BIG_FONT,
-    SMALL_FONT,
-    BIG_FONT_SIZE,
-    SMALL_FONT_SIZE,
-    COLUMN_0,
-    COLUMN_1,
-    LINE_0,
-    LINE_1,
-    TEXT_0,
-    NEXT_LINE,
-    FILENAME)
-
+from .permissions import IsAdmin, IsAuthor, ReadOnly
+from .serializers import (IngredientSerializer, RecipeCreateSerializer,
+                          RecipeCutFieldsSerializer, RecipeSerializer,
+                          SubscriptionSerializer, TagSerializer)
 
 SELF_SUBSCRIPTION = 'Вы не можете подписаться на себя'
 SUBSRIPTION_UNIQUE = 'Вы уже подписаны на этого автора'

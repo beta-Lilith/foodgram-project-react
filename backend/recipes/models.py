@@ -1,8 +1,8 @@
 from django.core.validators import MinValueValidator
 from django.db import models
-from users.models import User
-from foodgram_project.settings import LENGTH
 
+from foodgram_project.settings import LENGTH
+from users.models import User
 
 COOK_MIN = 1
 COOK_ERROR = 'Минимальное значение = 1'
