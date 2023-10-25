@@ -5,9 +5,9 @@
 ```
 docker compose up
 ```
-В дирректории foodgram-project-react/backend  
+В дирректории foodgram-project-react/backend с активированным вирт.окружением
 При необходимости:  
-выполнить миграции 
+выполнить миграции  
 ```
 python manage.py migrate
 ``` 
