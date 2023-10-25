@@ -7,7 +7,10 @@ docker compose up
 ```
 В дирректории foodgram-project-react/backend  
 При необходимости:  
-выполнить миграции  
+выполнить миграции 
+```
+python manage.py migrate
+``` 
 импортировать csv  
 ```
 python manage.py load_csv
