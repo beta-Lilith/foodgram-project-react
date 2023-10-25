@@ -4,7 +4,8 @@ from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 from djoser.views import UserViewSet
 from rest_framework.decorators import action
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.exceptions import ValidationError
+from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from recipes.models import (
@@ -51,7 +52,12 @@ from rest_framework.permissions import (
 
 
 class FoodUserViewSet(UserViewSet):
-    # permission_classes = (ReadOnly,)
+
+    @action(
+        detail=False,
+        permission_classes=(IsAuthor | IsAdmin,))
+    def me(self, request, *args, **kwargs):
+        return super().me(request, *args, **kwargs)
 
     @action(
         detail=False,
@@ -72,12 +78,21 @@ class FoodUserViewSet(UserViewSet):
         author = get_object_or_404(User, id=id)
         user = request.user
         if request.method == 'POST':
+            if author == user:
+                return Response(
+                    {'errors': 'Вы не можете подписаться на себя'},
+                    status=status.HTTP_400_BAD_REQUEST)
             serializer = SubscriptionSerializer(
                 author,
                 data=request.data,
                 context={'request': request})
             serializer.is_valid(raise_exception=True)
-            Subscription.objects.create(user=user, author=author)
+            try:
+                Subscription.objects.create(user=user, author=author)
+            except IntegrityError:
+                return Response(
+                    {'errors': 'Вы уже подписаны на этого автора'},
+                    status=status.HTTP_400_BAD_REQUEST)
             return Response(
                 serializer.data, status=status.HTTP_201_CREATED)
         try:
@@ -111,24 +126,18 @@ class RecipeViewSet(ModelViewSet):
         serializer.save(author=self.request.user)
 
     def add_recipe(self, user, recipe, model):
-        try:
-            model.objects.create(user=user, recipe=recipe)
-        except IntegrityError:
-            return Response(
-                {'errors': 'Этот рецепт уже добавлен'},
-                status=status.HTTP_400_BAD_REQUEST)
+        if model.objects.filter(user=user, recipe=recipe).exists():
+            raise ValidationError('Этот рецепт уже добавлен')
+        model.objects.create(user=user, recipe=recipe)
         return Response(
             self.get_serializer(recipe).data,
             status=status.HTTP_201_CREATED)
 
     def delete_recipe(self, user, recipe, model):
-        try:
-            state = model.objects.get(user=user, recipe=recipe)
-        except ObjectDoesNotExist:
-            return Response(
-                {'errors': 'Что мертво умереть не может'},
-                status=status.HTTP_400_BAD_REQUEST,)
-        state.delete()
+        recipe_in_model = model.objects.filter(user=user, recipe=recipe)
+        if not recipe_in_model.exists():
+            raise ValidationError('Что мертво умереть не может')
+        recipe_in_model.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def make_doc(self, buffer, ingredients, INGREDIENT, AMOUNT, UNIT):
@@ -148,8 +157,8 @@ class RecipeViewSet(ModelViewSet):
         detail=True,
         methods=('post', 'delete'))
     def favorite(self, request, pk):
-        user = request.user
         recipe = get_object_or_404(Recipe, id=pk)
+        user = request.user
         if request.method == 'POST':
             return self.add_recipe(user, recipe, Favorite)
         return self.delete_recipe(user, recipe, Favorite)
@@ -158,8 +167,8 @@ class RecipeViewSet(ModelViewSet):
         detail=True,
         methods=('post', 'delete'))
     def shopping_cart(self, request, pk):
-        user = request.user
         recipe = get_object_or_404(Recipe, id=pk)
+        user = request.user
         if request.method == 'POST':
             return self.add_recipe(user, recipe, ShoppingCart)
         return self.delete_recipe(user, recipe, ShoppingCart)
@@ -184,16 +193,16 @@ class RecipeViewSet(ModelViewSet):
             buffer, as_attachment=True, filename='Shopping-list.pdf')
 
 
-class IngredientViewSet(ModelViewSet):
+class IngredientViewSet(ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     filterset_class = IngredientFilter
     pagination_class = None
-    permission_classes = (ReadOnly | IsAdmin,)
+    # permission_classes = (ReadOnly | IsAdmin,)
 
 
-class TagViewSet(ModelViewSet):
+class TagViewSet(ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     pagination_class = None
-    permission_classes = (ReadOnly | IsAuthor | IsAdmin,)
+    # permission_classes = (ReadOnly | IsAdmin,)

@@ -64,10 +64,9 @@ DJOSER = {
         'user_create': 'api.serializers.FoodUserCreateSerializer',
     },
     'PERMISSIONS': {
-        'user': ['rest_framework.permissions.IsAuthenticated'],
-        'user_list': ['rest_framework.permissions.AllowAny']
+        'user': ['rest_framework.permissions.IsAuthenticatedOrReadOnly'],
+        'user_list': ['rest_framework.permissions.AllowAny'] # Check here
     },
-    'HIDE_USERS': False,
 }
 
 MIDDLEWARE = [
