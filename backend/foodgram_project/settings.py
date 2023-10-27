@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -39,8 +40,9 @@ INSTALLED_APPS = [
 
     'api',
     'recipes',
-    'users',
 ]
+
+AUTH_USER_MODEL = 'recipes.FoodUser'
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
@@ -56,7 +58,7 @@ REST_FRAMEWORK = {
 }
 
 DJOSER = {
-    'LOGIN_FIELD': 'email',
+    # 'LOGIN_FIELD': 'email',
     'SERIALIZERS': {
         'user': 'api.serializers.FoodUserSerializer',
         'current_user': 'api.serializers.FoodUserSerializer',
@@ -132,7 +134,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-RU'
 
 TIME_ZONE = 'Europe/Moscow'
 
@@ -161,6 +163,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Models fields length
 LENGTH = {
+    'EMAIL': 254,
+    'USERNAME': 150,
+    'FIRST_NAME': 150,
+    'LAST_NAME': 150,
     'TAG_NAME': 200,
     'TAG_COLOR': 7,
     'TAG_SLUG': 200,
@@ -168,15 +174,25 @@ LENGTH = {
     'INGREDIENT_NAME': 200,
     'INGREDIENT_MEASURE': 200,
 }
-# PDF write settings
+
+# Username validation
+REGEX = r'^[\w.@+-]+'
+URL_PATH_NAME = 'me'
+BAD_NAMES = (URL_PATH_NAME,)
+
+# Shopping list settings
+DATE = datetime.today().date()
+FILEFORMAT = '.txt'
+FILENAME = f'shopping_list_{DATE}{FILEFORMAT}'
+FILEPATH = os.path.join(MEDIA_ROOT, 'shopping_list', FILENAME)
 START = 0
 COLUMN_0 = 70
-COLUMN_1 = 220
+COLUMN_1 = 300
 LINE_0 = 750
-LINE_1 = 700
+LINE_1 = 730
+LINE_2 = 680
 TEXT_0 = 'Список ингредиентов:'
 NEXT_LINE = 20
-FILENAME = 'Shopping-list.pdf'
 
 # PDF fonts settings
 BIG_FONT = 'Montserrat-Bold'

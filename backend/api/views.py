@@ -1,24 +1,16 @@
-import io
-
-from django.db.models import Sum
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
-from reportlab.pdfgen import canvas
 from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from foodgram_project.settings import (BIG_FONT, BIG_FONT_SIZE, COLUMN_0,
-                                       COLUMN_1, FILENAME, LINE_0, LINE_1,
-                                       NEXT_LINE, SMALL_FONT, SMALL_FONT_SIZE,
-                                       START, TEXT_0)
+from foodgram_project.settings import FILEPATH
+from core.utils import make_doc
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                            ShoppingCart, Tag)
-from users.models import Subscription, User
-
+                            ShoppingCart, Tag, Subscription, FoodUser)
 from .filters import IngredientFilter, RecipeFilter
 from .permissions import IsAdmin, IsAuthor, ReadOnly
 from .serializers import (IngredientSerializer, RecipeCreateSerializer,
@@ -35,17 +27,16 @@ DEL_RECIPE_UNIQUE = 'Что мертво умереть не может'
 
 class FoodUserViewSet(UserViewSet):
 
-    @action(
-        detail=False,
-        permission_classes=(IsAuthor | IsAdmin,))
-    def me(self, request, *args, **kwargs):
-        return super().me(request, *args, **kwargs)
+    def get_permissions(self):
+        if self.action in ('me',):
+            self.permission_classes = (IsAuthor,)
+        return super().get_permissions()
 
     @action(
         detail=False,
         permission_classes=(IsAuthor | IsAdmin,))
     def subscriptions(self, request):
-        queryset = User.objects.filter(following__user=request.user)
+        queryset = FoodUser.objects.filter(following__user=request.user)
         serializer = SubscriptionSerializer(
             self.paginate_queryset(queryset),
             many=True,
@@ -57,7 +48,7 @@ class FoodUserViewSet(UserViewSet):
         methods=('post', 'delete',),
         permission_classes=(IsAuthor | IsAdmin,))
     def subscribe(self, request, id=None):
-        author = get_object_or_404(User, id=id)
+        author = get_object_or_404(FoodUser, id=id)
         user = request.user
         subscription = Subscription.objects.filter(user=user, author=author)
         if request.method == 'POST':
@@ -114,19 +105,6 @@ class RecipeViewSet(ModelViewSet):
         recipe_in_model.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def make_doc(self, buffer, ingredients, INGREDIENT, AMOUNT, UNIT):
-        doc = canvas.Canvas(buffer)
-        doc.setFont(BIG_FONT, BIG_FONT_SIZE)
-        doc.drawString(COLUMN_0, LINE_0, TEXT_0)
-        doc.setFont(SMALL_FONT, SMALL_FONT_SIZE)
-        y = LINE_1
-        for item in ingredients:
-            doc.drawString(COLUMN_0, y, f'- {item[INGREDIENT]}',)
-            doc.drawString(COLUMN_1, y, f'{str(item[AMOUNT])} {item[UNIT]}',)
-            y -= NEXT_LINE
-        doc.showPage()
-        doc.save()
-
     @action(
         detail=True,
         methods=('post', 'delete'))
@@ -150,21 +128,12 @@ class RecipeViewSet(ModelViewSet):
     @action(
         detail=False)
     def download_shopping_cart(self, request):
-        INGREDIENT = 'ingredient__name'
-        UNIT = 'ingredient__measurement_unit'
-        AMOUNT = 'amount'
-
         user = request.user
         if not user.shoppingcart.exists():
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        ingredients = RecipeIngredient.objects.filter(
-            recipe__shoppingcart__user=user
-        ).values(INGREDIENT, UNIT,).annotate(amount=Sum(AMOUNT))
-        buffer = io.BytesIO()
-        self.make_doc(buffer, ingredients, INGREDIENT, AMOUNT, UNIT)
-        buffer.seek(START)
-        return FileResponse(
-            buffer, as_attachment=True, filename=FILENAME)
+        ingredients = RecipeIngredient.get_shopping_cart_ingredients(user)
+        make_doc(ingredients)
+        return FileResponse(open(FILEPATH, 'rb'), as_attachment=True)
 
 
 class IngredientViewSet(ReadOnlyModelViewSet):

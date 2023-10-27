@@ -1,8 +1,15 @@
+from django.core.validators import RegexValidator
+from django.db.models import F, Sum
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
 from foodgram_project.settings import LENGTH
-from users.models import User
+from .validators import validate_username
+
+NOT_UNIQUE_NAME = {'unique': "Это имя пользователя уже существует."}
+
+HEX_VALIDATION = 'Введите цвет в формате HEX'
 
 COOK_MIN = 1
 COOK_ERROR = 'Минимальное значение = 1'
@@ -11,57 +18,78 @@ AMOUNT_MIN = 1
 AMOUNT_ERROR = 'Минимальное значение = 1'
 
 
+class FoodUser(AbstractUser):
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ('username', 'first_name', 'last_name',)
+    email = models.EmailField(
+        'электронная почта',
+        max_length=LENGTH['EMAIL'],
+        unique=True)
+    username = models.CharField(
+        'логин',
+        max_length=LENGTH['USERNAME'],
+        unique=True,
+        validators=(validate_username,),
+        error_messages=NOT_UNIQUE_NAME)
+    first_name = models.CharField(
+        'имя',
+        max_length=LENGTH['FIRST_NAME'])
+    last_name = models.CharField(
+        'фамилия',
+        max_length=LENGTH['LAST_NAME'])
+
+    class Meta:
+        verbose_name = 'пользователь'
+        verbose_name_plural = 'пользователи'
+        ordering = ('username',)
+
+    def __str__(self):
+        return self.username
+
+
+class Subscription(models.Model):
+    user = models.ForeignKey(
+        FoodUser,
+        verbose_name='подписчик',
+        related_name='follower',
+        on_delete=models.CASCADE)
+    author = models.ForeignKey(
+        FoodUser,
+        verbose_name='автор',
+        related_name='following',
+        on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'подписка'
+        verbose_name_plural = 'подписки'
+        constraints = [
+            models.UniqueConstraint(
+                fields=('user', 'author',),
+                name='unique_subscription'
+            )]
+
+    def __str__(self):
+        return f'{self.user} подписался на {self.author}'
+
+
 class Tag(models.Model):
     name = models.CharField(
         'имя',
         max_length=LENGTH['TAG_NAME'])
     color = models.CharField(
         'цвет',
-        max_length=LENGTH['TAG_COLOR'])
+        max_length=LENGTH['TAG_COLOR'],
+        validators=[RegexValidator(
+            regex='^#[0-9a-fA-F]{6}$',
+            message=HEX_VALIDATION)])
     slug = models.SlugField(
-        'URL-адрес',
+        'тег',
         max_length=LENGTH['TAG_SLUG'],
         unique=True)
 
     class Meta:
         verbose_name = 'тег'
         verbose_name_plural = 'теги'
-
-    def __str__(self):
-        return self.name
-
-
-class Recipe(models.Model):
-    tags = models.ManyToManyField(
-        Tag,
-        verbose_name='тег',
-        related_name='recipe')
-    author = models.ForeignKey(
-        User,
-        verbose_name='автор',
-        related_name='recipe',
-        on_delete=models.CASCADE)
-    ingredients = models.ManyToManyField(
-        'Ingredient',
-        verbose_name='ингредиент',
-        through='RecipeIngredient',
-        through_fields=('recipe', 'ingredient'))
-    name = models.CharField(
-        'название',
-        max_length=LENGTH['RECIPE_NAME'])
-    image = models.ImageField(
-        'изображение',
-        upload_to='recipe_images/')
-    text = models.TextField(
-        'рецепт')
-    cooking_time = models.PositiveIntegerField(
-        'время приготовления',
-        validators=(MinValueValidator(COOK_MIN, COOK_ERROR),))
-
-    class Meta:
-        verbose_name = 'рецепт'
-        verbose_name_plural = 'рецепты'
-        ordering = ('-id',)
 
     def __str__(self):
         return self.name
@@ -84,6 +112,42 @@ class Ingredient(models.Model):
         return self.name
 
 
+class Recipe(models.Model):
+    tags = models.ManyToManyField(
+        Tag,
+        verbose_name='тег',
+        related_name='recipe')
+    author = models.ForeignKey(
+        FoodUser,
+        verbose_name='автор',
+        related_name='recipe',
+        on_delete=models.CASCADE)
+    ingredients = models.ManyToManyField(
+        Ingredient,
+        verbose_name='ингредиент',
+        related_name='recipe',
+        through='RecipeIngredient',
+        through_fields=('recipe', 'ingredient'))
+    name = models.CharField(
+        'название',
+        max_length=LENGTH['RECIPE_NAME'])
+    image = models.ImageField(
+        'изображение',
+        upload_to='recipe_images/')
+    text = models.TextField(
+        'рецепт')
+    cooking_time = models.PositiveIntegerField(
+        'время приготовления',
+        validators=(MinValueValidator(COOK_MIN, COOK_ERROR),))
+
+    class Meta:
+        verbose_name = 'рецепт'
+        verbose_name_plural = 'рецепты'
+
+    def __str__(self):
+        return self.name
+
+
 class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(
         Recipe,
@@ -93,11 +157,20 @@ class RecipeIngredient(models.Model):
     ingredient = models.ForeignKey(
         Ingredient,
         verbose_name='ингредиент',
-        # related_name='recipe_ingredient',
+        related_name='recipe_ingredient',
         on_delete=models.CASCADE)
     amount = models.PositiveIntegerField(
         'количество',
         validators=(MinValueValidator(AMOUNT_MIN, AMOUNT_ERROR),))
+
+    @staticmethod
+    def get_shopping_cart_ingredients(user):
+        return RecipeIngredient.objects.filter(
+            recipe__shoppingcart__user=user
+        ).values(
+            name=F('ingredient__name'),
+            unit=F('ingredient__measurement_unit'),
+        ).annotate(amount=Sum('amount'))
 
     class Meta:
         verbose_name = 'Ингредиент в рецепте'
@@ -109,7 +182,7 @@ class RecipeIngredient(models.Model):
 
 class UserRecipe(models.Model):
     user = models.ForeignKey(
-        User,
+        FoodUser,
         verbose_name='пользователь',
         related_name='%(class)s',
         on_delete=models.CASCADE)
