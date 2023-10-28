@@ -1,5 +1,4 @@
 import os
-from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -162,7 +161,7 @@ CSVDATA_ROOT = BASE_DIR / 'data'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Models fields length
-LENGTH = {
+LENGTHS = {
     'EMAIL': 254,
     'USERNAME': 150,
     'FIRST_NAME': 150,
@@ -176,21 +175,11 @@ LENGTH = {
 }
 
 # Username validation
-REGEX = r'^[\w.@+-]+'
+REGEX_NAME = r'^[\w.@+-]+'
 
 # Shopping list settings
-DATE = datetime.today().date()
-FILEFORMAT = '.txt'
-FILENAME = f'shopping_list_{DATE}{FILEFORMAT}'
-FILEPATH = os.path.join(MEDIA_ROOT, 'shopping_list', FILENAME)
-START = 0
-COLUMN_0 = 70
-COLUMN_1 = 300
-LINE_0 = 750
-LINE_1 = 730
-LINE_2 = 680
-TEXT_0 = 'Список ингредиентов:'
-NEXT_LINE = 20
+FILEFORMAT = 'text/plain'  # 'text/plain' 'application/pdf'
+FILENAME = 'shopping_list_{}'
 
 # PDF fonts settings
 BIG_FONT = 'Montserrat-Bold'

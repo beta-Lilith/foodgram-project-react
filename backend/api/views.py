@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
@@ -7,8 +9,8 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from core.utils import make_doc
-from foodgram_project.settings import FILEPATH
+from recipes.utils import make_doc
+from foodgram_project.settings import FILEFORMAT, FILENAME
 from recipes.models import (Favorite, FoodUser, Ingredient, Recipe,
                             RecipeIngredient, ShoppingCart, Subscription, Tag)
 from .filters import IngredientFilter, RecipeFilter
@@ -29,7 +31,7 @@ class FoodUserViewSet(UserViewSet):
 
     def get_permissions(self):
         if self.action in ('me',):
-            self.permission_classes = (IsFoodUser,)
+            return (IsFoodUser(),)
         return super().get_permissions()
 
     @action(
@@ -128,12 +130,16 @@ class RecipeViewSet(ModelViewSet):
     @action(
         detail=False)
     def download_shopping_cart(self, request):
+        date = datetime.today().date()
         user = request.user
-        if not user.shoppingcart.exists():
+        if not user.shoppingcarts.exists():
             return Response(status=status.HTTP_400_BAD_REQUEST)
         ingredients = RecipeIngredient.get_shopping_cart_ingredients(user)
-        make_doc(ingredients)
-        return FileResponse(open(FILEPATH, 'rb'), as_attachment=True)
+        recipes = RecipeIngredient.get_shopping_cart_recipes(user)
+        doc = make_doc(ingredients, recipes, date)
+        return FileResponse(
+            doc, content_type=FILEFORMAT, as_attachment=True,
+            filename=FILENAME.format(date))
 
 
 class IngredientViewSet(ReadOnlyModelViewSet):

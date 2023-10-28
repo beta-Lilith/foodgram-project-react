@@ -2,6 +2,7 @@ from collections import Counter
 
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueValidator
@@ -10,11 +11,10 @@ from recipes.models import FoodUser, Ingredient, Recipe, RecipeIngredient, Tag
 
 NO_INGREDIENTS = 'Добавьте ингридиенты'
 NO_INGREDIENTS_DB = 'Этого ингредиента нет в базе'
-INGREDIENTS_UNIQUE = (
-    'Ингредиенты должны быть уникальными. У вас повторяются: {}')
 
 NO_TAGS = 'Добавьте теги'
-TAGS_UNIQUE = 'Теги должны быть уникальными. У вас повторяются: {}'
+
+CHECK_UNIQUE = 'Объекты должны быть уникальными. Повторяются: {}'
 
 NO_IMAGE = 'Добавьте картинку'
 
@@ -113,12 +113,12 @@ class RecipeSerializer(serializers.ModelSerializer):
     @check_is_anonymous
     def get_is_favorited(self, recipe):
         return self.context.get(
-            'request').user.favorite.filter(recipe=recipe).exists()
+            'request').user.favorites.filter(recipe=recipe).exists()
 
     @check_is_anonymous
     def get_is_in_shopping_cart(self, recipe):
         return self.context.get(
-            'request').user.shoppingcart.filter(recipe=recipe).exists()
+            'request').user.shoppingcarts.filter(recipe=recipe).exists()
 
 
 class AddIngredientSerializer(serializers.ModelSerializer):
@@ -145,32 +145,27 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'text',
             'cooking_time',)
 
+    def check_unique(self, obj_list):
+        if len(obj_list) != len(set(obj_list)):
+            not_unique = [
+                obj.name
+                for obj, count in Counter(obj_list).items()
+                if count > 1]
+            raise ValidationError(
+                CHECK_UNIQUE.format(not_unique))
+
     def validate_ingredients(self, value):
         if not value:
             raise ValidationError(NO_INGREDIENTS)
-        ingredients = []
-        for ingredient in value:
-            if not Ingredient.objects.filter(id=ingredient['id']).exists():
-                raise ValidationError(NO_INGREDIENTS_DB)
-            ingredients.append(ingredient['id'])
-        if len(ingredients) != len(set(ingredients)):
-            not_unique = [
-                Ingredient.objects.get(id=id).name
-                for id, count in Counter(ingredients).items()
-                if count > 1]
-            raise ValidationError(
-                INGREDIENTS_UNIQUE.format(not_unique))
+        self.check_unique([
+            get_object_or_404(Ingredient, id=ingredient['id'])
+            for ingredient in value])
         return value
 
     def validate_tags(self, value):
         if not value:
             raise ValidationError(NO_TAGS)
-        if len(value) != len(set(value)):
-            not_unique = [
-                tag.name for tag, count in Counter(value).items()
-                if count > 1]
-            raise ValidationError(
-                TAGS_UNIQUE.format(not_unique))
+        self.check_unique(value)
         return value
 
     def validate_image(self, value):
@@ -179,13 +174,12 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         return value
 
     def set_ingredients(self, recipe, ingredients):
-        recipe_ingredients = [
+        RecipeIngredient.objects.bulk_create(
             RecipeIngredient(
                 recipe=recipe,
                 ingredient_id=data['id'],
                 amount=data['amount'])
-            for data in ingredients]
-        RecipeIngredient.objects.bulk_create(recipe_ingredients)
+            for data in ingredients)
 
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients')
@@ -243,11 +237,13 @@ class SubscriptionSerializer(FoodUserSerializer):
         return author.recipe.count()
 
     def get_recipes(self, obj):
-        if not (limit := self.context.get(
-                'request').GET.get('recipes_limit', str(10**10))).isdigit():
+        limit = self.context.get('request').GET.get('recipes_limit', 10**10)
+        try:
+            recipes = obj.recipe.all()[:int(limit)]
+        except ValueError:
             raise ValidationError(NOT_INT.format(limit))
         return RecipeCutFieldsSerializer(
-            obj.recipe.all()[:int(limit)], many=True, read_only=True).data
+            recipes, many=True, read_only=True).data
 
 
 class IngredientSerializer(serializers.ModelSerializer):
