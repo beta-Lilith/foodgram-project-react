@@ -177,8 +177,6 @@ LENGTH = {
 
 # Username validation
 REGEX = r'^[\w.@+-]+'
-URL_PATH_NAME = 'me'
-BAD_NAMES = (URL_PATH_NAME,)
 
 # Shopping list settings
 DATE = datetime.today().date()

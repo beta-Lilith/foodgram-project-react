@@ -7,12 +7,12 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from foodgram_project.settings import FILEPATH
 from core.utils import make_doc
-from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                            ShoppingCart, Tag, Subscription, FoodUser)
+from foodgram_project.settings import FILEPATH
+from recipes.models import (Favorite, FoodUser, Ingredient, Recipe,
+                            RecipeIngredient, ShoppingCart, Subscription, Tag)
 from .filters import IngredientFilter, RecipeFilter
-from .permissions import IsAdmin, IsAuthor, ReadOnly
+from .permissions import IsFoodUser, ReadOnly
 from .serializers import (IngredientSerializer, RecipeCreateSerializer,
                           RecipeCutFieldsSerializer, RecipeSerializer,
                           SubscriptionSerializer, TagSerializer)
@@ -29,12 +29,12 @@ class FoodUserViewSet(UserViewSet):
 
     def get_permissions(self):
         if self.action in ('me',):
-            self.permission_classes = (IsAuthor,)
+            self.permission_classes = (IsFoodUser,)
         return super().get_permissions()
 
     @action(
         detail=False,
-        permission_classes=(IsAuthor | IsAdmin,))
+        permission_classes=(IsFoodUser,))
     def subscriptions(self, request):
         queryset = FoodUser.objects.filter(following__user=request.user)
         serializer = SubscriptionSerializer(
@@ -46,7 +46,7 @@ class FoodUserViewSet(UserViewSet):
     @action(
         detail=True,
         methods=('post', 'delete',),
-        permission_classes=(IsAuthor | IsAdmin,))
+        permission_classes=(IsFoodUser,))
     def subscribe(self, request, id=None):
         author = get_object_or_404(FoodUser, id=id)
         user = request.user
@@ -72,7 +72,7 @@ class FoodUserViewSet(UserViewSet):
 
 class RecipeViewSet(ModelViewSet):
     filterset_class = RecipeFilter
-    permission_classes = (ReadOnly | IsAuthor | IsAdmin,)
+    permission_classes = (ReadOnly | IsFoodUser,)
 
     def get_queryset(self):
         recipes = Recipe.objects.prefetch_related(

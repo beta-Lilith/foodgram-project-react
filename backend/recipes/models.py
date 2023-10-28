@@ -1,8 +1,7 @@
-from django.core.validators import RegexValidator
-from django.db.models import F, Sum
-from django.core.validators import MinValueValidator
-from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MinValueValidator, RegexValidator
+from django.db import models
+from django.db.models import F, Sum
 
 from foodgram_project.settings import LENGTH
 from .validators import validate_username

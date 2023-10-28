@@ -1,9 +1,9 @@
 from reportlab.pdfgen import canvas
 
 from foodgram_project.settings import (BIG_FONT, BIG_FONT_SIZE, COLUMN_0,
-                                       COLUMN_1, LINE_0, LINE_1, LINE_2,
-                                       NEXT_LINE, SMALL_FONT, SMALL_FONT_SIZE,
-                                       TEXT_0, FILEPATH, FILEFORMAT, DATE)
+                                       COLUMN_1, DATE, FILEFORMAT, FILEPATH,
+                                       LINE_0, LINE_1, LINE_2, NEXT_LINE,
+                                       SMALL_FONT, SMALL_FONT_SIZE, TEXT_0)
 
 
 def make_doc(ingredients):
