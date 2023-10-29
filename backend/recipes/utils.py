@@ -2,9 +2,8 @@ import io
 
 from reportlab.pdfgen import canvas
 
-from foodgram_project.settings import (BIG_FONT, BIG_FONT_SIZE,
-                                       FILEFORMAT,
-                                       SMALL_FONT, SMALL_FONT_SIZE,)
+from foodgram_project.settings import (BIG_FONT, BIG_FONT_SIZE, FILEFORMAT,
+                                       SMALL_FONT, SMALL_FONT_SIZE)
 
 START = 0
 COLUMN_0 = 70

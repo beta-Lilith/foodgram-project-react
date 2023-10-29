@@ -175,7 +175,7 @@ LENGTHS = {
 }
 
 # Username validation
-REGEX_NAME = r'^[\w.@+-]+'
+REGEX_USERNAME = r'^[\w.@+-]+'
 
 # Shopping list settings
 FILEFORMAT = 'text/plain'  # 'text/plain' 'application/pdf'

@@ -103,12 +103,12 @@ class Ingredient(models.Model):
         max_length=LENGTHS['INGREDIENT_MEASURE'])
 
     class Meta:
-        verbose_name = 'ингредиент'
-        verbose_name_plural = 'ингредиенты'
+        verbose_name = 'продукт'
+        verbose_name_plural = 'продукты'
         ordering = ('name',)
 
     def __str__(self):
-        return self.name
+        return f'{self.name} ({self.measurement_unit})'
 
 
 class Recipe(models.Model):
@@ -123,7 +123,7 @@ class Recipe(models.Model):
         on_delete=models.CASCADE)
     ingredients = models.ManyToManyField(
         Ingredient,
-        verbose_name='ингредиент',
+        verbose_name='продукт',
         related_name='recipe',
         through='RecipeIngredient',
         through_fields=('recipe', 'ingredient'))
@@ -155,11 +155,11 @@ class RecipeIngredient(models.Model):
         on_delete=models.CASCADE)
     ingredient = models.ForeignKey(
         Ingredient,
-        verbose_name='ингредиент',
+        verbose_name='продукт',
         related_name='recipe_ingredient',
         on_delete=models.CASCADE)
     amount = models.PositiveIntegerField(
-        'количество',
+        'мера',
         validators=(MinValueValidator(AMOUNT_MIN, AMOUNT_ERROR),))
 
     @staticmethod
@@ -179,8 +179,8 @@ class RecipeIngredient(models.Model):
             name=F('recipe__name'))
 
     class Meta:
-        verbose_name = 'Ингредиент в рецепте'
-        verbose_name_plural = 'Ингредиенты в рецепте'
+        verbose_name = 'продукт в рецепте'
+        verbose_name_plural = 'продукты в рецепте'
 
     def __str__(self):
         return self.recipe.name
