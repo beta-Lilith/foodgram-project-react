@@ -11,8 +11,14 @@ from .models import (Favorite, FoodUser, Ingredient, Recipe, RecipeIngredient,
 @admin.register(FoodUser)
 class FoodUserAdmin(UserAdmin):
     list_display = (
-        'id', 'username', 'email', 'first_name', 'last_name',
-        'count_recipes', 'count_follower', 'count_following')
+        'id',
+        'username',
+        'email',
+        'first_name',
+        'last_name',
+        'count_recipes',
+        'count_follower',
+        'count_following')
     search_fields = ('username',)
 
     @admin.display(description='рецепты')
