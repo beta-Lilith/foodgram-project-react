@@ -14,12 +14,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-2z2uf-)#7l=yk$9o=x_c*(=t)zk=8h92hyb3-p=pf$9pr-wxr+'
+SECRET_KEY = os.getenv('SECRET_KEY', default='secret')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', default='127.0.0.1, localhost').split(', ')
 
 
 # Application definition
@@ -105,8 +105,12 @@ WSGI_APPLICATION = 'foodgram_project.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.sqlite3' if os.getenv('USE_SQLITE') == 'True' else 'django.db.backends.postgresql',
+        'NAME': BASE_DIR / 'db.sqlite3' if os.getenv('USE_SQLITE') == 'True' else os.getenv('POSTGRES_DB', 'django'),
+        'USER': os.getenv('POSTGRES_USER', 'django'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', ''),
+        'PORT': os.getenv('DB_PORT', 5432),
     }
 }
 
@@ -178,7 +182,7 @@ LENGTHS = {
 REGEX_USERNAME = r'^[\w.@+-]+'
 
 # Shopping list settings
-FILEFORMAT = 'text/plain'  # 'text/plain' 'application/pdf'
+FILEFORMAT = 'application/pdf'  # 'text/plain' 'application/pdf'
 FILENAME = 'shopping_list_{}'
 
 # PDF fonts settings

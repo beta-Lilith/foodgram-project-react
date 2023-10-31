@@ -145,28 +145,27 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'text',
             'cooking_time',)
 
-    def check_unique(self, obj_list):
-        if len(obj_list) != len(set(obj_list)):
-            not_unique = [
-                obj.name
-                for obj, count in Counter(obj_list).items()
-                if count > 1]
-            raise ValidationError(
-                CHECK_UNIQUE.format(not_unique))
+    def check_unique(self, value, obj_list=None):
+        obj_list = value if obj_list is None else obj_list
+        if len(obj_list) == len(set(obj_list)):
+            return value
+        not_unique = [
+            obj.name for obj, count in Counter(obj_list).items()
+            if count > 1]
+        raise ValidationError(
+            CHECK_UNIQUE.format(not_unique))
 
     def validate_ingredients(self, value):
         if not value:
             raise ValidationError(NO_INGREDIENTS)
-        self.check_unique([
-            get_object_or_404(Ingredient, id=ingredient['id'])
-            for ingredient in value])
-        return value
+        return self.check_unique(
+            value, [get_object_or_404(Ingredient, id=ingredient['id'])
+                    for ingredient in value])
 
     def validate_tags(self, value):
         if not value:
             raise ValidationError(NO_TAGS)
-        self.check_unique(value)
-        return value
+        return self.check_unique(value)
 
     def validate_image(self, value):
         if not value:
@@ -239,11 +238,11 @@ class SubscriptionSerializer(FoodUserSerializer):
     def get_recipes(self, obj):
         limit = self.context.get('request').GET.get('recipes_limit', 10**10)
         try:
-            recipes = obj.recipe.all()[:int(limit)]
+            limit = int(limit)
         except ValueError:
             raise ValidationError(NOT_INT.format(limit))
         return RecipeCutFieldsSerializer(
-            recipes, many=True, read_only=True).data
+            obj.recipe.all()[:limit], many=True, read_only=True).data
 
 
 class IngredientSerializer(serializers.ModelSerializer):

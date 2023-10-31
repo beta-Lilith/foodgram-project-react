@@ -1,4 +1,5 @@
 import io
+from datetime import datetime
 
 from reportlab.pdfgen import canvas
 
@@ -17,27 +18,31 @@ TEXT_2 = 'Рецепты: '
 NEXT_LINE = 20
 
 
-def make_doc(ingredients, recipes, date):
+def make_doc(ingredients, recipes):
+    date = str(datetime.today().date())
     recipes_list = ''.join((
         TEXT_2,
         ', '.join(set(
             recipe['name']
             for recipe in recipes))))
     if FILEFORMAT == 'text/plain':
-        return '\n'.join((
-            TEXT_0,
-            str(date),
-            recipes_list,
-            '\n'.join(
-                f'{index + 1}. {item["name"]}: {item["amount"]} {item["unit"]}'
-                for index, item in enumerate(ingredients))))
+        return (
+            '\n'.join((
+                TEXT_0,
+                date,
+                recipes_list,
+                '\n'.join(
+                    f'{index + 1}. {item["name"]}: '
+                    f'{item["amount"]} {item["unit"]}'
+                    for index, item in enumerate(ingredients)))),
+            date)
     if FILEFORMAT == 'application/pdf':
         buffer = io.BytesIO()
         doc = canvas.Canvas(buffer)
         doc.setFont(BIG_FONT, BIG_FONT_SIZE)
         doc.drawString(COLUMN_0, LINE_0, TEXT_0)
         doc.setFont(SMALL_FONT, SMALL_FONT_SIZE)
-        doc.drawString(COLUMN_0, LINE_1, str(date))
+        doc.drawString(COLUMN_0, LINE_1, date)
         doc.drawString(COLUMN_0, LINE_2, recipes_list)
         y = LINE_3
         numeration = 1
@@ -50,4 +55,4 @@ def make_doc(ingredients, recipes, date):
         doc.showPage()
         doc.save()
         buffer.seek(START)
-        return buffer
+        return buffer, date

@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
@@ -93,20 +91,19 @@ class RecipeViewSet(ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    def add_recipe(self, user, recipe, model):
-        if model.objects.filter(user=user, recipe=recipe).exists():
+    def add_delete_recipe(self, user, recipe, model):
+        recipe_in_model = model.objects.filter(user=user, recipe=recipe)
+        if self.request.method == 'DELETE':
+            if not recipe_in_model.exists():
+                raise ValidationError(DEL_RECIPE_UNIQUE)
+            recipe_in_model.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        if recipe_in_model.exists():
             raise ValidationError(RECIPE_UNIQUE)
         model.objects.create(user=user, recipe=recipe)
         return Response(
             self.get_serializer(recipe).data,
             status=status.HTTP_201_CREATED)
-
-    def delete_recipe(self, user, recipe, model):
-        recipe_in_model = model.objects.filter(user=user, recipe=recipe)
-        if not recipe_in_model.exists():
-            raise ValidationError(DEL_RECIPE_UNIQUE)
-        recipe_in_model.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         detail=True,
@@ -114,9 +111,7 @@ class RecipeViewSet(ModelViewSet):
     def favorite(self, request, pk):
         recipe = get_object_or_404(Recipe, id=pk)
         user = request.user
-        if request.method == 'POST':
-            return self.add_recipe(user, recipe, Favorite)
-        return self.delete_recipe(user, recipe, Favorite)
+        return self.add_delete_recipe(user, recipe, Favorite)
 
     @action(
         detail=True,
@@ -124,20 +119,17 @@ class RecipeViewSet(ModelViewSet):
     def shopping_cart(self, request, pk):
         recipe = get_object_or_404(Recipe, id=pk)
         user = request.user
-        if request.method == 'POST':
-            return self.add_recipe(user, recipe, ShoppingCart)
-        return self.delete_recipe(user, recipe, ShoppingCart)
+        return self.add_delete_recipe(user, recipe, ShoppingCart)
 
     @action(
         detail=False)
     def download_shopping_cart(self, request):
-        date = datetime.today().date()
         user = request.user
         if not user.shoppingcarts.exists():
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        ingredients = RecipeIngredient.get_shopping_cart_ingredients(user)
-        recipes = RecipeIngredient.get_shopping_cart_recipes(user)
-        doc = make_doc(ingredients, recipes, date)
+        doc, date = make_doc(
+            RecipeIngredient.get_shopping_cart_ingredients(user),
+            RecipeIngredient.get_shopping_cart_recipes(user))
         return FileResponse(
             doc, content_type=FILEFORMAT, as_attachment=True,
             filename=FILENAME.format(date))

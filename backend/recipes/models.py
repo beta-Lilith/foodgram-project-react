@@ -203,7 +203,7 @@ class UserRecipe(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=('user', 'recipe',),
-                name='unique_favorite',
+                name='unique_%(class)s',
             )]
 
     def __str__(self):
@@ -212,13 +212,13 @@ class UserRecipe(models.Model):
 
 class Favorite(UserRecipe):
 
-    class Meta:
+    class Meta(UserRecipe.Meta):
         verbose_name = 'избранное'
         verbose_name_plural = 'избранное'
 
 
 class ShoppingCart(UserRecipe):
 
-    class Meta:
+    class Meta(UserRecipe.Meta):
         verbose_name = 'корзина'
         verbose_name_plural = 'корзина'

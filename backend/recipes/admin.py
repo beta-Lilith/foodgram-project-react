@@ -1,11 +1,14 @@
+from ast import literal_eval
 from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import Group
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from .models import (Favorite, FoodUser, Ingredient, Recipe, RecipeIngredient,
                      ShoppingCart, Subscription, Tag)
+admin.site.unregister(Group)
 
 
 @admin.register(FoodUser)
@@ -71,18 +74,25 @@ class CookingSpeedFilter(admin.SimpleListFilter):
     parameter_name = 'speed'
 
     def lookups(self, request, model_admin):
+        if not (
+            times := sorted(model_admin.get_queryset(
+                request).values_list('cooking_time', flat=True))):
+            return
+        threshold_1 = times[int(len(times) / 3)]
+        threshold_2 = times[int(len(times) * 2 / 3)]
+        fast = (0, threshold_1)
+        medium = (threshold_1, threshold_2)
+        slow = (threshold_2, times[-1])
         return (
-            ('fast', _('Быстро')),
-            ('medium', _('Средне')),
-            ('slow', _('Медленно')))
+            (fast, _(f'Быстро: {fast[0]} - {fast[1]} минут')),
+            (medium, _(f'Средне: {medium[0]} - {medium[1]} минут')),
+            (slow, _(f'Медленно: {slow[0]} - {slow[1]} минут')))
 
     def queryset(self, request, queryset):
-        if self.value() == 'fast':
-            return queryset.filter(cooking_time__lte=10)
-        if self.value() == 'medium':
-            return queryset.filter(cooking_time__gt=10, cooking_time__lte=30)
-        if self.value() == 'slow':
-            return queryset.filter(cooking_time__gt=30)
+        if not self.value():
+            return queryset
+        start, end = literal_eval(self.value())
+        return queryset.filter(cooking_time__range=(start, end))
 
 
 @admin.register(Recipe)

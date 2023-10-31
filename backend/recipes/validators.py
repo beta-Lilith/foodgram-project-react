@@ -8,7 +8,7 @@ NOT_REGEX_NAME = 'Нельзя использовать в имени: {}'
 
 
 def validate_username(name):
-    if (used_wrong_chars := ''.join(set(re.sub(REGEX_USERNAME, '', name)))):
+    if (used_wrong_chars := re.sub(REGEX_USERNAME, '', name)):
         raise ValidationError(
-            NOT_REGEX_NAME.format(used_wrong_chars))
+            NOT_REGEX_NAME.format(''.join(set(used_wrong_chars))))
     return name
