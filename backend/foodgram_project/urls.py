@@ -16,12 +16,10 @@ Including another URLconf
 from django.conf import settings  # for local front pics
 from django.conf.urls.static import static  # for local front pics
 from django.contrib import admin
-from django.views.generic import TemplateView
 from django.urls import include, path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/docs/', TemplateView.as_view(template_name='redoc.html')),
     path('api/', include('api.urls')),
 ]
 if settings.DEBUG:
