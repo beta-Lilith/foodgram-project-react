@@ -1,4 +1,3 @@
-from django.views.generic import TemplateView
 from django.urls import include, path
 from rest_framework import routers
 
@@ -10,7 +9,6 @@ router.register(r'users', FoodUserViewSet, basename='users')
 router.register(r'recipes', RecipeViewSet, basename='recipes')
 router.register(r'ingredients', IngredientViewSet, basename='ingredients')
 router.register(r'tags', TagViewSet, basename='tags')
-router.register(r'docs', TemplateView(template_name='redoc.html')),
 
 urlpatterns = [
     path('', include(router.urls)),
