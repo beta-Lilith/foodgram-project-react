@@ -4,6 +4,7 @@ volumes:
   pg_data_production:
   static:
   media:
+  redoc:
 
 services:
 
@@ -21,6 +22,7 @@ services:
     volumes:
       - static:/back_static
       - media:/app/media
+      - redoc:/app/api/docs
 
   frontend:
     env_file: .env
@@ -40,3 +42,4 @@ services:
     volumes:
       - static:/nginx_static
       - media:/app/media
+      - redoc:/app/api/docs
