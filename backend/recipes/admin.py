@@ -1,4 +1,5 @@
 from ast import literal_eval
+
 from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
@@ -8,6 +9,7 @@ from django.utils.translation import gettext_lazy as _
 
 from .models import (Favorite, FoodUser, Ingredient, Recipe, RecipeIngredient,
                      ShoppingCart, Subscription, Tag)
+
 admin.site.unregister(Group)
 
 

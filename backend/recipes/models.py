@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models import F, Sum
 
 from foodgram_project.settings import LENGTHS
+
 from .validators import validate_username
 
 NOT_UNIQUE_NAME = {'unique': "Это имя пользователя уже существует."}
