@@ -12,8 +12,8 @@ router.register(r'ingredients', IngredientViewSet, basename='ingredients')
 router.register(r'tags', TagViewSet, basename='tags')
 
 urlpatterns = [
+    path('docs/', TemplateView.as_view(template_name='redoc.html')),
     path('', include(router.urls)),
     path('', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
-    path('docs/', TemplateView.as_view(template_name='redoc.html')),
 ]
