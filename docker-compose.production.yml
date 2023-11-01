@@ -42,4 +42,4 @@ services:
     volumes:
       - static:/nginx_static
       - media:/app/media
-      - redoc:/app/api/docs/usr/share/nginx/html/api/docs
+      - redoc:/usr/share/nginx/html/api/docs
