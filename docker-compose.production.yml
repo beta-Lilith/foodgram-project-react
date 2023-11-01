@@ -22,6 +22,7 @@ services:
     volumes:
       - static:/back_static
       - media:/app/media
+      - redoc:/app/api/docs
 
   frontend:
     env_file: .env
