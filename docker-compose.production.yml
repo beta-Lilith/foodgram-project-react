@@ -22,7 +22,6 @@ services:
     volumes:
       - static:/back_static
       - media:/app/media
-      - redoc:/app/api/docs
 
   frontend:
     env_file: .env
@@ -42,4 +41,4 @@ services:
     volumes:
       - static:/nginx_static
       - media:/app/media
-      - redoc:/app/api/docs/usr/share/nginx/html/api/docs/redoc.html
+      - redoc:/app/api/docs/usr/share/nginx/html/api/docs
