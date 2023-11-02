@@ -41,7 +41,7 @@ git clone https://github.com/beta-Lilith/foodgram-project-react.git
   
 ### НА УДАЛЕННОМ СЕРВЕРЕ: 
   
-Установите Docker Compose поочередно выполнив команды
+Установите Docker Compose поочередно выполнив команды:  
 ```
 sudo apt update
 sudo apt install curl
@@ -67,7 +67,7 @@ server {
 }
 ```
   
-Получить SSL-сертификат от Let’s Encrypt:  
+Получить SSL-сертификат от Let’s Encrypt  
 Установить certbot:  
 ```
 sudo apt install snapd
@@ -108,22 +108,22 @@ cd foodgram
   
 Запустить docker-compose.production в режиме демона:
 ```
-docker compose -f docker-compose.production.yml up -d
+sudo docker compose -f docker-compose.production.yml up -d
 ```
   
 Выполнить миграции и собрать статику бэкенда, загрузить ингредиенты и теги:
 ```
-docker compose -f docker-compose.production.yml exec backend python manage.py migrate
-docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic
-docker compose -f docker-compose.production.yml exec backend cp -r /app/collected_static/. /back_static/static/
-docker compose -f docker-compose.production.yml exec backend python manage.py load_ingredients
-docker compose -f docker-compose.production.yml exec backend python manage.py load_tags
+sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
+sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic
+sudo docker compose -f docker-compose.production.yml exec backend cp -r /app/collected_static/. /back_static/static/
+sudo docker compose -f docker-compose.production.yml exec backend python manage.py load_ingredients
+sudo docker compose -f docker-compose.production.yml exec backend python manage.py load_tags
 ```
   
 Создать суперпользователя:
   
 ```
-docker compose -f docker-compose.production.yml exec backend python manage.py createsuperuser
+sudo docker compose -f docker-compose.production.yml exec backend python manage.py createsuperuser
 ```
   
 Готово!  

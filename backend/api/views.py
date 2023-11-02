@@ -1,6 +1,10 @@
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
+from foodgram_project.settings import FILEFORMAT, FILENAME
+from recipes.models import (Favorite, FoodUser, Ingredient, Recipe,
+                            RecipeIngredient, ShoppingCart, Subscription, Tag)
+from recipes.utils import make_doc
 from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -8,10 +12,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from foodgram_project.settings import FILEFORMAT, FILENAME
-from recipes.models import (Favorite, FoodUser, Ingredient, Recipe,
-                            RecipeIngredient, ShoppingCart, Subscription, Tag)
-from recipes.utils import make_doc
 from .filters import IngredientFilter, RecipeFilter
 from .permissions import IsAuthor, ReadOnly
 from .serializers import (IngredientSerializer, RecipeCreateSerializer,

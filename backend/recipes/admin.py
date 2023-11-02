@@ -89,7 +89,7 @@ class CookingSpeedFilter(admin.SimpleListFilter):
         return (
             (fast, _(f'Быстро: до {fast[1]} минут')),
             (medium, _(f'Средне: {medium[0]} - {medium[1]} минут')),
-            (slow, _(f'Медленно: от {slow[1]} минут')))
+            (slow, _(f'Медленно: от {slow[0]} минут')))
 
     def queryset(self, request, queryset):
         if not self.value():

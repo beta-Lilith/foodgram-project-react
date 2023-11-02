@@ -3,11 +3,10 @@ from collections import Counter
 from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
+from recipes.models import FoodUser, Ingredient, Recipe, RecipeIngredient, Tag
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueValidator
-
-from recipes.models import FoodUser, Ingredient, Recipe, RecipeIngredient, Tag
 
 NO_INGREDIENTS = 'Добавьте ингридиенты'
 NO_INGREDIENTS_DB = 'Этого ингредиента нет в базе'
