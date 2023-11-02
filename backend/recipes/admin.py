@@ -56,13 +56,14 @@ class TagForm(forms.ModelForm):
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'tag_color', 'slug',)
+    list_display = ('id', 'name', 'tag_color', 'color', 'slug',)
     form = TagForm
     search_fields = ('slug',)
 
     @admin.display(description='цвет')
     def tag_color(self, tag):
-        return mark_safe(f'<span style="color:{tag.color};">{"|"*10}</span>')
+        return mark_safe(
+            f'<span style="background:{tag.color};">{"&nbsp"*15}</span>')
 
 
 class RecipeIngredientInLine(admin.StackedInline):
@@ -80,21 +81,20 @@ class CookingSpeedFilter(admin.SimpleListFilter):
             times := sorted(model_admin.get_queryset(
                 request).values_list('cooking_time', flat=True))):
             return
-        threshold_1 = times[int(len(times) / 3)]
-        threshold_2 = times[int(len(times) * 2 / 3)]
-        fast = (0, threshold_1)
-        medium = (threshold_1, threshold_2)
+        threshold_1 = times[len(times) // 3]
+        threshold_2 = times[len(times) * 2 // 3]
+        fast = (0, threshold_1 - 1)
+        medium = (threshold_1, threshold_2 - 1)
         slow = (threshold_2, times[-1])
         return (
-            (fast, _(f'Быстро: {fast[0]} - {fast[1]} минут')),
+            (fast, _(f'Быстро: до {fast[1]} минут')),
             (medium, _(f'Средне: {medium[0]} - {medium[1]} минут')),
-            (slow, _(f'Медленно: {slow[0]} - {slow[1]} минут')))
+            (slow, _(f'Медленно: от {slow[1]} минут')))
 
     def queryset(self, request, queryset):
         if not self.value():
             return queryset
-        start, end = literal_eval(self.value())
-        return queryset.filter(cooking_time__range=(start, end))
+        return queryset.filter(cooking_time__range=literal_eval(self.value()))
 
 
 @admin.register(Recipe)
@@ -147,7 +147,7 @@ class RecipeAdmin(admin.ModelAdmin):
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'measurement_unit', 'count_in_recipes',)
-    search_fields = ('name',)
+    search_fields = ('name', 'measurement_unit',)
     list_filter = ('measurement_unit',)
 
     @admin.display(description='в рецептах')

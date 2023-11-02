@@ -149,34 +149,36 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'text',
             'cooking_time',)
 
-    def check_unique(self, value, obj_list=None):
-        obj_list = value if obj_list is None else obj_list
-        if len(obj_list) == len(set(obj_list)):
-            return value
-        not_unique = [
-            obj.name for obj, count in Counter(obj_list).items()
-            if count > 1]
-        raise ValidationError(
-            CHECK_UNIQUE.format(not_unique))
+    def check_unique(self, obj_list):
+        if len(obj_list) != len(set(obj_list)):
+            not_unique = [
+                obj.name for obj, count in Counter(obj_list).items()
+                if count > 1]
+            raise ValidationError(
+                CHECK_UNIQUE.format(not_unique))
 
-    def validate_ingredients(self, value):
-        if not value:
+    def validate_ingredients(self, ingredients):
+        if not ingredients:
             raise ValidationError(NO_INGREDIENTS)
-        return self.check_unique(
-            value, [get_object_or_404(Ingredient, id=ingredient['id'])
-                    for ingredient in value])
+        self.check_unique([
+            get_object_or_404(Ingredient, id=ingredient['id'])
+            for ingredient in ingredients])
+        return ingredients
 
-    def validate_tags(self, value):
-        if not value:
+    def validate_tags(self, tags):
+        if not tags:
             raise ValidationError(NO_TAGS)
-        return self.check_unique(value)
+        self.check_unique(tags)
+        return tags
 
-    def validate_image(self, value):
-        if not value:
+    def validate_image(self, image):
+        if not image:
             raise ValidationError(NO_IMAGE)
-        return value
+        return image
 
-    def set_ingredients(self, recipe, ingredients):
+    def set_ingredients(self, recipe, ingredients, clear_ingredients=False):
+        if clear_ingredients:
+            recipe.ingredients.clear()
         RecipeIngredient.objects.bulk_create(
             RecipeIngredient(
                 recipe=recipe,
@@ -201,9 +203,8 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         tags = validated_data.pop('tags')
         recipe = super().update(recipe, validated_data)
         recipe.tags.clear()
-        recipe.ingredients.clear()
-        self.set_ingredients(recipe, ingredients)
         recipe.tags.set(tags)
+        self.set_ingredients(recipe, ingredients, clear_ingredients=True)
         recipe.save()
         return recipe
 

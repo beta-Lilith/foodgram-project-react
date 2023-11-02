@@ -77,7 +77,7 @@ class Tag(models.Model):
         'имя',
         max_length=LENGTHS['TAG_NAME'])
     color = models.CharField(
-        'цвет',
+        'код цвета',
         max_length=LENGTHS['TAG_COLOR'],
         validators=[RegexValidator(
             regex='^#[0-9a-fA-F]{6}$',
@@ -144,10 +144,15 @@ class Recipe(models.Model):
     cooking_time = models.PositiveIntegerField(
         'время приготовления',
         validators=(MinValueValidator(COOK_MIN, COOK_ERROR),))
+    pub_date = models.DateTimeField(
+        'дата публикации',
+        auto_now_add=True,
+    )
 
     class Meta:
         verbose_name = 'рецепт'
         verbose_name_plural = 'рецепты'
+        ordering = ('-pub_date',)
 
     def __str__(self):
         return self.name
