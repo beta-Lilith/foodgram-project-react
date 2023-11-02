@@ -68,7 +68,7 @@ server {
 ```
   
 Получить SSL-сертификат от Let’s Encrypt:  
-Установить certbot  
+Установить certbot:  
 ```
 sudo apt install snapd
 ```
@@ -118,7 +118,6 @@ docker compose -f docker-compose.production.yml exec backend python manage.py co
 docker compose -f docker-compose.production.yml exec backend cp -r /app/collected_static/. /back_static/static/
 docker compose -f docker-compose.production.yml exec backend python manage.py load_ingredients
 docker compose -f docker-compose.production.yml exec backend python manage.py load_tags
-
 ```
   
 Создать суперпользователя:
